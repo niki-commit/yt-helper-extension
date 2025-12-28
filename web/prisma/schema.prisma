@@ -1,0 +1,54 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  fullName  String?  @map("full_name")
+  avatarUrl String?  @map("avatar_url")
+  videos    Video[]  @relation("UserVideos")
+  notes     Note[]   @relation("UserNotes")
+
+  @@map("profiles")
+}
+
+model Video {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  user          Profile  @relation("UserVideos", fields: [userId], references: [id])
+  youtubeId     String   @map("youtube_id")
+  title         String
+  thumbnailUrl  String?  @map("thumbnail_url")
+  bookmarkTime  Float?   @map("bookmark_time")
+  lastWatchedAt DateTime @default(now()) @map("last_watched_at")
+  notes         Note[]   @relation("VideoNotes")
+
+  @@unique([userId, youtubeId])
+  @@map("videos")
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  videoId   String   @map("video_id")
+  video     Video    @relation("VideoNotes", fields: [videoId], references: [id])
+  userId    String   @map("user_id")
+  user      Profile  @relation("UserNotes", fields: [userId], references: [id])
+  timestamp Float
+  text      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("notes")
+}
