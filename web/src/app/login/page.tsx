@@ -1,7 +1,13 @@
 import { signInWithGoogle } from "@/lib/actions/auth";
 import { Puzzle } from "lucide-react";
 
-export default function LoginPage() {
+export default async function LoginPage(props: {
+  searchParams: Promise<{ source?: string; error?: string }>;
+}) {
+  const searchParams = await props.searchParams;
+  const isExtension = searchParams.source === "extension";
+  const error = searchParams.error;
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-6">
       <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 transition-all duration-300 hover:shadow-2xl">
@@ -12,15 +18,27 @@ export default function LoginPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
-            Welcome to Note Hub
+            {isExtension ? "Link VideoNotes" : "Welcome to Note Hub"}
           </h1>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Sync your YouTube study notes across all your devices
+            {isExtension
+              ? "Connect your extension to start syncing notes"
+              : "Sync your YouTube study notes across all your devices"}
           </p>
         </div>
 
+        {error && (
+          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl text-sm text-red-600 dark:text-red-400 text-center">
+            {error}
+          </div>
+        )}
+
         <div className="mt-8 space-y-4">
           <form action={signInWithGoogle}>
+            {/* If initiated from the extension, redirect to the success page to complete the handshake */}
+            {isExtension && (
+              <input type="hidden" name="next" value="/auth/success" />
+            )}
             <button
               type="submit"
               className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-zinc-900 px-4 py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
@@ -43,7 +61,9 @@ export default function LoginPage() {
                   fill="#EA4335"
                 />
               </svg>
-              <span>Sign in with Google</span>
+              <span>
+                {isExtension ? "Link with Google" : "Sign in with Google"}
+              </span>
               <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-zinc-200 dark:ring-white/10 group-hover:ring-zinc-300 dark:group-hover:ring-white/20 transition-all duration-200" />
             </button>
           </form>

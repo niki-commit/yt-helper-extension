@@ -52,3 +52,25 @@ model Note {
 
   @@map("notes")
 }
+
+model AuthHandshake {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("auth_handshakes")
+}
+
+model ExtensionSession {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  refreshToken String   @unique @map("refresh_token")
+  userAgent    String?  @map("user_agent")
+  expiresAt    DateTime @map("expires_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("extension_sessions")
+}

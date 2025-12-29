@@ -1,19 +1,20 @@
-import { defineConfig } from 'wxt';
+import { defineConfig } from "wxt";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
-  srcDir: 'src',
-  modules: ['@wxt-dev/module-react'],
+  srcDir: "src",
+  modules: ["@wxt-dev/module-react"],
   manifest: {
-    name: 'VideoNotes',
-    description: 'Distraction-free YouTube learning with timestamped notes',
-    permissions: ['storage'],
+    name: "VideoNotes",
+    description: "Distraction-free YouTube learning with timestamped notes",
+    permissions: ["storage", "identity"],
+    host_permissions: ["https://*.supabase.co/*", "http://localhost:3000/*"],
   },
   vite: () => ({
     build: {
       sourcemap: false,
-      minify: 'terser', // Use terser instead of esbuild to avoid UTF-8 encoding issues
-      target: 'esnext',
+      minify: "terser", // Use terser instead of esbuild to avoid UTF-8 encoding issues
+      target: "esnext",
       cssCodeSplit: false,
       terserOptions: {
         format: {

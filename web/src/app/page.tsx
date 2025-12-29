@@ -1,6 +1,9 @@
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { Library, PlusCircle, Search, Settings } from "lucide-react";
+import prisma from "@/lib/prisma";
+import { Library, PlusCircle, Search } from "lucide-react";
+import { VideoCard } from "@/components/VideoCard";
+import { GalleryGrid } from "@/components/GalleryGrid";
+import Link from "next/link";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -8,74 +11,102 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  if (!user) return null;
+
+  // Ensure Profile is up to date in Prisma
+  await prisma.profile.upsert({
+    where: { id: user.id },
+    update: {
+      fullName: user.user_metadata.full_name,
+      avatarUrl: user.user_metadata.avatar_url,
+      email: user.email!,
+    },
+    create: {
+      id: user.id,
+      fullName: user.user_metadata.full_name,
+      avatarUrl: user.user_metadata.avatar_url,
+      email: user.email!,
+    },
+  });
+
+  // Fetch real data from Prisma
+  const videos = await prisma.video.findMany({
+    where: { userId: user.id },
+    include: {
+      _count: {
+        select: { notes: true },
+      },
+    },
+    orderBy: {
+      lastWatchedAt: "desc",
+    },
+  });
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      <header className="mb-12">
-        <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
-          Happy Learning, {user?.user_metadata.full_name?.split(" ")[0]}! 👋
-        </h1>
-        <p className="mt-4 text-xl text-zinc-600 dark:text-zinc-400">
-          Your centralized hub for all YouTube study notes.
-        </p>
+      {/* Hero Section */}
+      <header className="mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-900/10 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest animate-pulse">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+            </span>
+            Live Sync Active
+          </div>
+          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl lg:text-6xl">
+            Welcome back,{" "}
+            <span className="text-indigo-600 dark:text-indigo-400">
+              {user.user_metadata.full_name?.split(" ")[0]}
+            </span>
+          </h1>
+          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl font-medium">
+            Manage your study sessions and review your insights across{" "}
+            {videos.length} videos.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center -space-x-2 overflow-hidden">
+            {/* Mock avatars or real user circle */}
+            <div className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold overflow-hidden">
+              {user.user_metadata.avatar_url ? (
+                <img src={user.user_metadata.avatar_url} alt="User" />
+              ) : (
+                user.user_metadata.full_name?.[0]
+              )}
+            </div>
+          </div>
+        </div>
       </header>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {/* Quick Actions Card */}
-        <div className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 transition-all hover:shadow-lg">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-600 text-white group-hover:scale-110 transition-transform">
-            <Library className="h-6 w-6" />
+      {/* Grid Content */}
+      {videos.length > 0 ? (
+        <GalleryGrid initialVideos={videos} />
+      ) : (
+        /* Empty State */
+        <div className="flex flex-col items-center justify-center py-20 px-6 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 text-center">
+          <div className="p-6 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 mb-8">
+            <Library className="h-12 w-12 text-zinc-300 dark:text-zinc-700 mx-auto" />
           </div>
-          <h3 className="mt-6 text-xl font-bold text-zinc-900 dark:text-zinc-50">
-            My Study Collection
-          </h3>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            View all videos you've taken notes on.
+          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
+            No sessions synced yet
+          </h2>
+          <p className="mt-3 text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto">
+            Open a YouTube video and use the VideoNotes extension to start
+            taking notes. Your sessions will appear here automatically.
           </p>
-          <div className="mt-6">
+          <div className="mt-8">
             <Link
-              href="/videos"
-              className="inline-flex items-center text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 dark:hover:text-indigo-300"
+              href="/login?source=extension"
+              className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-8 py-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 shadow-lg shadow-indigo-500/10"
             >
-              Browse Gallery →
+              Get Extension
+              <PlusCircle className="h-4 w-4" />
             </Link>
           </div>
         </div>
-
-        {/* Search Card */}
-        <div className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-white p-8 dark:border-zinc-800 dark:bg-zinc-900 transition-all hover:shadow-lg">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 group-hover:scale-110 transition-transform">
-            <Search className="h-6 w-6" />
-          </div>
-          <h3 className="mt-6 text-xl font-bold text-zinc-900 dark:text-zinc-50">
-            Global Search
-          </h3>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Find specific concepts across all your saved videos.
-          </p>
-          <div className="mt-6 text-zinc-400 text-sm">
-            Coming soon to web...
-          </div>
-        </div>
-
-        {/* Extension Info Card */}
-        <div className="group relative overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 p-8 dark:border-zinc-800 dark:bg-zinc-950/50 transition-all hover:shadow-lg">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-600 text-white group-hover:scale-110 transition-transform">
-            <PlusCircle className="h-6 w-6" />
-          </div>
-          <h3 className="mt-6 text-xl font-bold text-zinc-900 dark:text-zinc-50">
-            Sync in Progress
-          </h3>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Notes taken in the extension appear here instantly.
-          </p>
-          <div className="mt-6 flex gap-1">
-            <span className="flex h-2 w-2 rounded-full bg-green-500 my-auto"></span>
-            <span className="text-xs font-bold text-green-600 uppercase tracking-wider">
-              Cloud Connected
-            </span>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }

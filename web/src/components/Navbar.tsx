@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/lib/actions/auth";
-import { Puzzle, LogOut, User as UserIcon } from "lucide-react";
+import { Puzzle, LogOut, User as UserIcon, Search } from "lucide-react";
 import Image from "next/image";
 
 export default async function Navbar() {
@@ -29,6 +29,14 @@ export default async function Navbar() {
             <span className="text-xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
               Note Hub
             </span>
+          </Link>
+
+          <Link
+            href="/search"
+            className="hidden sm:flex items-center gap-2 ml-6 text-sm font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50 transition-colors"
+          >
+            <Search className="w-4 h-4" />
+            Global Search
           </Link>
         </div>
 
