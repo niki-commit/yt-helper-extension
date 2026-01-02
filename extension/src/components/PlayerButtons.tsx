@@ -80,7 +80,7 @@ export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
       <div className="relative flex items-center h-full">
         <button
           onClick={() => setShowNotePopup(true)}
-          className="flex items-center gap-1 px-2 mt-1 rounded-full h-full hover:bg-white/10 transition-colors text-white font-medium text-2xl whitespace-nowrap justify-center"
+          className="flex items-center gap-1 px-2 mt-0.5 rounded-full h-full hover:bg-white/10 transition-colors text-white font-medium text-2xl whitespace-nowrap justify-center"
           title="Add Note"
         >
           <Plus className="w-6 h-6" />

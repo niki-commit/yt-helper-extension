@@ -17,11 +17,20 @@ export const DISTRACTION_FREE_CSS = `
   ytd-watch-flexy #merch-shelf { display: none !important; }
   ytd-watch-flexy ytd-video-secondary-info-renderer #metadata-row { display: none !important; }
 
-  /* Ensure our sidebar container stays visible on watch page */
-  ytd-watch-flexy #secondary { 
-    display: block !important; 
-    min-width: 350px !important;
-    visibility: visible !important;
+  /* Ensure our sidebar container stays visible on desktop only */
+  @media (min-width: 1024px) {
+    ytd-watch-flexy #secondary { 
+      display: block !important; 
+      min-width: 350px !important;
+      visibility: visible !important;
+    }
+  }
+
+  /* Prevent huge space on the right in single-column mode */
+  @media (max-width: 1023px) {
+    ytd-watch-flexy #secondary {
+      display: none !important;
+    }
   }
 `;
 

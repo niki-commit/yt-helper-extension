@@ -12,11 +12,15 @@ interface ActionBarButtonsProps {
 }
 
 export default function ActionBarButtons({ videoId }: ActionBarButtonsProps) {
-  const [showNotePopup, setShowNotePopup] = useState(false);
   const [hasBookmark, setHasBookmark] = useState(false);
 
-  // Ref for popup positioning
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 1024);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   useEffect(() => {
     checkBookmark();
@@ -52,27 +56,25 @@ export default function ActionBarButtons({ videoId }: ActionBarButtonsProps) {
   return (
     <div
       className="flex items-center gap-2 mr-2"
-      ref={containerRef}
       style={{ display: "flex", alignItems: "center" }}
     >
-      <JumpToNotesChip />
+      {isMobile && <JumpToNotesChip />}
 
       <div className="relative">
         <button
-          onClick={() => setShowNotePopup(true)}
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("yt-helper-open-quick-note", {
+                detail: { videoId },
+              })
+            );
+          }}
           className="flex items-center gap-1 px-2 h-9 rounded-full bg-white/10 hover:bg-white/20 transition-colors text-lg font-medium text-white"
           title="Add Note"
         >
           <Plus className="w-6 h-6" />
           <span>Note</span>
         </button>
-
-        {showNotePopup && (
-          <NotePopup
-            videoId={videoId}
-            onClose={() => setShowNotePopup(false)}
-          />
-        )}
       </div>
 
       <button

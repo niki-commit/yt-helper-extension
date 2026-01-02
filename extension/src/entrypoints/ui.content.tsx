@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import VideoNotes from "@/components/VideoNotes";
 import ActionBarButtons from "@/components/ActionBarButtons";
 import PlayerButtons from "@/components/PlayerButtons";
+import QuickNoteOverlay from "@/components/QuickNoteOverlay";
 import { initAutoPause, setAutoPauseEnabled } from "@/features/autoPause";
 import { setDistractionFreeMode } from "@/features/distraction";
 import { getSettings, watchSettings } from "@/storage/settings";
@@ -13,12 +14,6 @@ export default defineContentScript({
   cssInjectionMode: "ui",
   async main(ctx) {
     // ---- 1. Responsive Sidebar Logic ----
-    // We create Two UIs for sidebar: One for Desktop, One for Mobile
-    // Only one should be mounted at a time.
-    // However, createShadowRootUi doesn't expose easy unmount/remount on demand without re-calling it?
-    // WXT's UI API usually returns an object with mount() and unmount().
-    // We will create both and manage them manually based on ResizeObserver.
-
     let desktopUi: any = null;
     let mobileUi: any = null;
 
@@ -117,9 +112,24 @@ export default defineContentScript({
     const actionBarUi = await createShadowRootUi(ctx, {
       name: "video-notes-action-bar",
       position: "inline",
-      anchor: "#top-level-buttons-computed",
+      anchor: "ytd-watch-metadata #top-level-buttons-computed",
       append: "first",
       onMount: (container) => {
+        // Enforce styles to prevent clipping
+        container.style.display = "inline-block";
+        container.style.verticalAlign = "middle";
+        container.style.height = "100%";
+        container.style.pointerEvents = "auto";
+        container.style.overflow = "visible";
+        container.style.position = "relative";
+
+        // Also ensure the YouTube parent doesn't clip
+        const parent = container.parentElement;
+        if (parent) {
+          parent.style.overflow = "visible";
+          parent.style.contain = "none";
+        }
+
         const root = ReactDOM.createRoot(container);
         const Wrapper = () => {
           const getVid = () =>
@@ -147,8 +157,9 @@ export default defineContentScript({
       position: "inline",
       anchor: ".ytp-right-controls",
       append: "first",
-
       onMount: (container) => {
+        container.style.overflow = "visible";
+        container.style.position = "relative";
         const root = ReactDOM.createRoot(container);
         const Wrapper = () => {
           const getVid = () =>
@@ -220,46 +231,75 @@ export default defineContentScript({
       }
     };
 
-    // Listeners
+    // Listeners for Sidebar
     window.addEventListener("resize", () => {
       if (!checkDead()) manageSidebar();
     });
 
-    // Initial mount check loop
-    const initInterval = setInterval(() => {
-      if (checkDead()) {
-        clearInterval(initInterval);
-        unwatch();
-        stopAutoPause();
-        return;
+    // ---- Robust Mounting Logic ----
+
+    const safelyMount = (ui: any) => {
+      try {
+        if (!ui.mounted) ui.mount();
+      } catch (e) {
+        // Silence mount errors
       }
+    };
 
-      const safelyMount = (ui: any) => {
-        try {
-          if (!ui.mounted) ui.mount();
-        } catch (e) {
-          // Silence mount errors (usually "anchor not found")
-        }
-      };
+    const safelyRemove = (ui: any) => {
+      try {
+        if (ui.mounted) ui.remove();
+      } catch (e) {
+        // Silence remove errors
+      }
+    };
 
-      const safelyRemove = (ui: any) => {
-        try {
-          if (ui.mounted) ui.remove();
-        } catch (e) {
-          // Silence remove errors
-        }
-      };
+    const checkAndMount = () => {
+      if (checkDead()) return;
 
-      // Ensure Action Bar and Player UI are mounted if elements exist
       const hasButtons = document.querySelector("#top-level-buttons-computed");
       const hasPlayer = document.querySelector(".ytp-right-controls");
 
+      // ---- Action Bar ----
       if (hasButtons) {
-        safelyMount(actionBarUi);
+        let isMounted = false;
+        try {
+          isMounted =
+            !!actionBarUi.mounted &&
+            hasButtons.contains(actionBarUi.shadowHost);
+        } catch (e) {
+          isMounted = false;
+        }
+
+        if (!isMounted) {
+          console.log("[YT-Helper] Action Bar anchor found, mounting...");
+          safelyRemove(actionBarUi);
+          safelyMount(actionBarUi);
+        }
+
+        // Enforce styles to prevent clipping
+        try {
+          const host = actionBarUi.shadowHost as HTMLElement;
+          if (host) {
+            host.style.display = "inline-block";
+            host.style.verticalAlign = "middle";
+            host.style.height = "100%";
+            host.style.pointerEvents = "auto";
+            host.style.overflow = "visible";
+            host.style.position = "relative";
+
+            // Also ensure the YouTube parent doesn't clip
+            const parent = host.parentElement;
+            if (parent) {
+              parent.style.overflow = "visible";
+              parent.style.contain = "none";
+            }
+          }
+        } catch (e) {}
       }
 
+      // ---- Player UI ----
       if (hasPlayer) {
-        // More aggressive: Check if the shadow root host is physically in the DOM
         let isMounted = false;
         try {
           isMounted =
@@ -269,19 +309,83 @@ export default defineContentScript({
         }
 
         if (!isMounted) {
-          // Unmount if WXT thinks it's mounted but it's gone from DOM
+          console.log("[YT-Helper] Player anchor found, mounting...");
           safelyRemove(playerUi);
           safelyMount(playerUi);
         }
+
+        // Enforce styles
+        try {
+          const host = playerUi.shadowHost as HTMLElement;
+          if (host) {
+            host.style.display = "inline-flex";
+            host.style.verticalAlign = "top";
+            host.style.height = "100%";
+            host.style.pointerEvents = "auto";
+            host.style.zIndex = "9999";
+          }
+        } catch (e) {}
       }
 
       manageSidebar();
-    }, 1000);
+    };
+
+    // Track the burst interval to clear it if navigation happens rapidly
+    let currentBurstInterval: NodeJS.Timeout | null = null;
+
+    // 2. YouTube Navigation Event
+    window.addEventListener("yt-navigate-finish", () => {
+      console.log(
+        "[YT-Helper] Navigation finished. Force-refreshing Action Bar..."
+      );
+
+      // Rely on checkAndMount to see if we need to re-attach to new DOM elements
+      // (This avoids the "Remove then Mount" flicker during navigation)
+
+      // Do NOT remove Sidebars (to prevent flickering)
+
+      // Burst check: Check 15 times over 3 seconds to catch slow UI loads
+      let checks = 0;
+      currentBurstInterval = setInterval(() => {
+        checks++;
+        if (checks > 15 || checkDead()) {
+          if (currentBurstInterval) clearInterval(currentBurstInterval);
+          currentBurstInterval = null;
+          return;
+        }
+        checkAndMount();
+      }, 200);
+
+      // Immediate check
+      checkAndMount();
+    });
+
+    // 3. Fallback Interval (Safety net, slow poll)
+    const initInterval = setInterval(() => {
+      if (checkDead()) {
+        clearInterval(initInterval);
+        unwatch();
+        stopAutoPause();
+        if (currentBurstInterval) clearInterval(currentBurstInterval);
+        return;
+      }
+      checkAndMount();
+    }, 3000);
+
+    // ---- 4. Global Quick Note Overlay ----
+    const quickNoteUi = await createShadowRootUi(ctx, {
+      name: "video-notes-quick-note",
+      position: "overlay",
+      onMount: (container) => {
+        container.style.zIndex = "2147483647";
+        const root = ReactDOM.createRoot(container);
+        root.render(<QuickNoteOverlay />);
+        return { unmount: () => root.unmount() };
+      },
+    });
+    quickNoteUi.mount();
 
     // Initial call
-    manageSidebar();
-
-    // Clean up? Content script usually persists but...
-    // Return cleanup?
+    checkAndMount();
   },
 });
