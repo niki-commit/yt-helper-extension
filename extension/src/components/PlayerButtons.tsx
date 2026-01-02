@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { browser } from "wxt/browser";
 import { Plus, Bookmark } from "lucide-react";
 import { localStore } from "@/storage/dexie";
-import { getCurrentTime, waitForPlayer } from "@/utils/youtube";
+import { getCurrentTime, waitForPlayer, isAdRunning } from "@/utils/youtube";
 
 interface PlayerButtonsProps {
   videoId: string;
@@ -10,6 +10,7 @@ interface PlayerButtonsProps {
 
 export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
   const [hasBookmark, setHasBookmark] = useState(false);
+  const [isAdActive, setIsAdActive] = useState(false);
 
   useEffect(() => {
     // Check bookmark
@@ -21,10 +22,11 @@ export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
         }
         const video = await localStore.getVideo(videoId);
         setHasBookmark(!!(video && video.bookmarkTimestamp !== null));
+        setIsAdActive(isAdRunning());
       } catch (e) {
         clearInterval(interval);
       }
-    }, 2000);
+    }, 1000);
 
     return () => clearInterval(interval);
   }, [videoId]);
@@ -78,14 +80,20 @@ export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
       <div className="relative flex items-center h-full">
         <button
           onClick={() => {
+            if (isAdActive) return;
             window.dispatchEvent(
               new CustomEvent("yt-helper-open-quick-note", {
                 detail: { videoId },
               })
             );
           }}
-          className="flex items-center gap-1 px-2 mt-0.5 rounded-full h-full hover:bg-white/10 transition-colors text-white font-medium text-2xl whitespace-nowrap justify-center"
-          title="Add Note"
+          className={`flex items-center gap-1 px-2 mt-0.5 rounded-full h-full transition-colors text-white font-medium text-2xl whitespace-nowrap justify-center ${
+            isAdActive
+              ? "text-zinc-500 cursor-default opacity-50"
+              : "hover:bg-white/10"
+          }`}
+          title={isAdActive ? "Disabled during ads" : "Add Note"}
+          disabled={isAdActive}
         >
           <Plus className="w-6 h-6" />
           <span>Note</span>
@@ -94,14 +102,23 @@ export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
 
       {/* Bookmark Button */}
       <button
-        onClick={handleBookmark}
-        className={`w-12 h-full flex items-center justify-center hover:bg-white/10 transition-all ${
-          hasBookmark ? "text-indigo-400" : "text-white"
+        onClick={() => {
+          if (!isAdActive) handleBookmark();
+        }}
+        className={`w-12 h-full flex items-center justify-center transition-all ${
+          isAdActive
+            ? "text-zinc-500 cursor-default opacity-50"
+            : hasBookmark
+            ? "text-indigo-400 hover:bg-white/10"
+            : "text-white hover:bg-white/10"
         }`}
-        title="Bookmark"
+        title={isAdActive ? "Disabled during ads" : "Bookmark"}
+        disabled={isAdActive}
       >
         <Bookmark
-          className={`w-6 h-6 mt-1.5 ${hasBookmark ? "fill-current" : ""}`}
+          className={`w-6 h-6 mt-1.5 ${
+            hasBookmark && !isAdActive ? "fill-current" : ""
+          }`}
         />
       </button>
     </div>
