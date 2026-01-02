@@ -8,7 +8,7 @@ export default function JumpToNotesChip() {
     const isMobile = width < 1024;
 
     const targetId = isMobile ? "video-notes-mobile" : "video-notes-desktop";
-    const element = document.querySelector(`[name="${targetId}"]`);
+    const element = document.querySelector(targetId);
 
     if (element) {
       element.scrollIntoView({ behavior: "smooth", block: "center" });

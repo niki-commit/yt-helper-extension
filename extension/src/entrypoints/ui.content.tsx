@@ -70,8 +70,8 @@ export default defineContentScript({
     mobileUi = await createShadowRootUi(ctx, {
       name: "video-notes-mobile",
       position: "inline",
-      anchor: "#comments", // Insert before comments
-      append: "before",
+      anchor: "ytd-watch-metadata", // Insert after description
+      append: "after",
       onMount: (container) => {
         // Same shortcuts blocking
         const handleKeys = (e: KeyboardEvent) => {
@@ -115,20 +115,14 @@ export default defineContentScript({
       anchor: "ytd-watch-metadata #top-level-buttons-computed",
       append: "first",
       onMount: (container) => {
-        // Enforce styles to prevent clipping
+        // Enforce basic layout styles
         container.style.display = "inline-block";
         container.style.verticalAlign = "middle";
         container.style.height = "100%";
         container.style.pointerEvents = "auto";
-        container.style.overflow = "visible";
         container.style.position = "relative";
-
-        // Also ensure the YouTube parent doesn't clip
-        const parent = container.parentElement;
-        if (parent) {
-          parent.style.overflow = "visible";
-          parent.style.contain = "none";
-        }
+        container.style.marginRight = "8px";
+        container.style.marginLeft = "8px";
 
         const root = ReactDOM.createRoot(container);
         const Wrapper = () => {
@@ -264,17 +258,40 @@ export default defineContentScript({
       if (hasButtons) {
         let isMounted = false;
         try {
+          // Check if it's actually in the document and mounted via WXT
           isMounted =
             !!actionBarUi.mounted &&
-            hasButtons.contains(actionBarUi.shadowHost);
+            actionBarUi.shadowHost &&
+            document.body.contains(actionBarUi.shadowHost);
         } catch (e) {
           isMounted = false;
         }
 
         if (!isMounted) {
-          console.log("[YT-Helper] Action Bar anchor found, mounting...");
-          safelyRemove(actionBarUi);
+          // Only if genuinely missing do we intervene
+          console.log(
+            "[YT-Helper] Action Bar not found in anchor, ensuring mount..."
+          );
           safelyMount(actionBarUi);
+
+          // Force YouTube to re-calculate layout (multiple triggers to catch late hydration)
+          // tailored for Polymer's iron-resizable-behavior
+          const triggerResize = () => {
+            const ev = new CustomEvent("iron-resize", {
+              bubbles: true,
+              composed: true,
+            });
+            window.dispatchEvent(new Event("resize"));
+            document.querySelector("ytd-app")?.dispatchEvent(ev);
+            document.querySelector("ytd-watch-flexy")?.dispatchEvent(ev);
+            document
+              .querySelector("#top-level-buttons-computed")
+              ?.dispatchEvent(ev);
+          };
+
+          [100, 500, 1000, 2500].forEach((ms) => {
+            setTimeout(triggerResize, ms);
+          });
         }
 
         // Enforce styles to prevent clipping
@@ -285,15 +302,7 @@ export default defineContentScript({
             host.style.verticalAlign = "middle";
             host.style.height = "100%";
             host.style.pointerEvents = "auto";
-            host.style.overflow = "visible";
             host.style.position = "relative";
-
-            // Also ensure the YouTube parent doesn't clip
-            const parent = host.parentElement;
-            if (parent) {
-              parent.style.overflow = "visible";
-              parent.style.contain = "none";
-            }
           }
         } catch (e) {}
       }
