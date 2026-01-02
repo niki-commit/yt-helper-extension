@@ -126,17 +126,16 @@ export default defineContentScript({
     const actionBarUi = await createShadowRootUi(ctx, {
       name: "video-notes-action-bar",
       position: "inline",
-      anchor: "ytd-watch-metadata #top-level-buttons-computed",
-      append: "first",
+      anchor: "ytd-watch-metadata #owner",
+      append: "last",
       onMount: (container) => {
-        // Enforce basic layout styles
-        container.style.display = "inline-block";
-        container.style.verticalAlign = "middle";
+        container.style.display = "flex";
+        container.style.alignItems = "center";
         container.style.height = "100%";
         container.style.pointerEvents = "auto";
         container.style.position = "relative";
-        container.style.marginRight = "8px";
-        container.style.marginLeft = "8px";
+        container.style.marginLeft = "12px"; // Gap from Subscribe button
+        container.style.marginRight = "4px";
 
         const root = ReactDOM.createRoot(container);
         const Wrapper = () => {
@@ -265,18 +264,18 @@ export default defineContentScript({
     const checkAndMount = () => {
       if (checkDead()) return;
 
-      const hasButtons = document.querySelector("#top-level-buttons-computed");
+      const hasOwner = document.querySelector("ytd-watch-metadata #owner");
       const hasPlayer = document.querySelector(".ytp-right-controls");
 
       // ---- Action Bar ----
-      if (hasButtons) {
+      if (hasOwner) {
         let isMounted = false;
         try {
-          // Check if it's actually in the document and mounted via WXT
+          // It is mounted if the UI says so AND the owner container contains the host
           isMounted =
             !!actionBarUi.mounted &&
             actionBarUi.shadowHost &&
-            document.body.contains(actionBarUi.shadowHost);
+            hasOwner.contains(actionBarUi.shadowHost);
         } catch (e) {
           isMounted = false;
         }
@@ -284,8 +283,9 @@ export default defineContentScript({
         if (!isMounted) {
           // Only if genuinely missing do we intervene
           console.log(
-            "[YT-Helper] Action Bar not found in anchor, ensuring mount..."
+            "[YT-Helper] Action Bar not found in owner section, ensuring mount..."
           );
+          safelyRemove(actionBarUi);
           safelyMount(actionBarUi);
 
           // Force YouTube to re-calculate layout (multiple triggers to catch late hydration)
@@ -312,11 +312,13 @@ export default defineContentScript({
         try {
           const host = actionBarUi.shadowHost as HTMLElement;
           if (host) {
-            host.style.display = "inline-block";
-            host.style.verticalAlign = "middle";
+            host.style.display = "flex";
+            host.style.alignItems = "center";
             host.style.height = "100%";
             host.style.pointerEvents = "auto";
             host.style.position = "relative";
+            host.style.marginLeft = "12px";
+            host.style.marginRight = "4px";
           }
         } catch (e) {}
       }
