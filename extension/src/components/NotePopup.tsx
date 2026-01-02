@@ -35,14 +35,21 @@ export default function NotePopup({
     setTimestamp(time);
     pauseVideo();
 
+    // Force player UI to stay visible
+    const player = document.querySelector(".html5-video-player");
+    if (player) {
+      player.classList.add("yt-helper-showing-note");
+    }
+
     // Focus textarea
     setTimeout(() => {
       textareaRef.current?.focus();
     }, 100);
 
     return () => {
-      // Resume on unmount? User said "when add note button clicked video pauses...".
-      // Usually implied resume on cancel/save.
+      if (player) {
+        player.classList.remove("yt-helper-showing-note");
+      }
     };
   }, []);
 
@@ -98,9 +105,9 @@ export default function NotePopup({
         />
       )}
       <div
-        className={`${modalClasses} z-10001 w-[320px] bg-[#0f0f0f] backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
+        className={`${modalClasses} z-10001 w-[500px] bg-[#0f0f0f] backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
       >
-        <div className="p-4 space-y-3">
+        <div className="p-6 space-y-4">
           <div className="flex items-center justify-between">
             <div className="text-[11px] font-black uppercase tracking-wider text-indigo-400 bg-indigo-500/10 px-2 py-1 rounded-md border border-indigo-500/20">
               Moment: {formatTime(timestamp)}
@@ -109,22 +116,32 @@ export default function NotePopup({
               onClick={handleCancel}
               className="text-zinc-400 hover:text-white transition-colors"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          <Textarea
-            ref={textareaRef}
-            value={noteText}
-            onChange={(e) => setNoteText(e.target.value)}
-            placeholder="Capture your thought..."
-            className="min-h-[100px] bg-black/40 border-zinc-700/50 focus:border-indigo-500/50 focus:ring-0 rounded-xl resize-none text-sm text-zinc-200 placeholder:text-zinc-600"
-            onKeyDown={(e: any) => {
-              e.stopPropagation(); // Prevent YouTube shortcuts
-              if (e.key === "Enter" && e.ctrlKey) handleSave();
-              if (e.key === "Escape") handleCancel();
-            }}
-          />
+          <div className="relative">
+            <Textarea
+              ref={textareaRef}
+              value={noteText}
+              onChange={(e) => setNoteText(e.target.value)}
+              placeholder="Capture your thought..."
+              maxLength={1000}
+              className="min-h-[180px] bg-black/40 border-zinc-700/50 focus:border-indigo-500/50 focus:ring-0 rounded-xl resize-none text-base text-zinc-200 placeholder:text-zinc-600 p-4"
+              onKeyDown={(e: any) => {
+                e.stopPropagation(); // Prevent YouTube shortcuts
+                if (e.key === "Enter" && e.ctrlKey) handleSave();
+                if (e.key === "Escape") handleCancel();
+              }}
+            />
+            <div
+              className={`absolute bottom-2 right-3 text-[10px] font-bold ${
+                noteText.length >= 1000 ? "text-red-500" : "text-zinc-500"
+              }`}
+            >
+              {noteText.length}/1000
+            </div>
+          </div>
 
           <div className="flex justify-end gap-2">
             <Button

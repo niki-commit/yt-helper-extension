@@ -404,20 +404,33 @@ export default function VideoNotes({
                         <Clock className="w-3.5 h-3.5" />
                         Moment: {formatTime(currentTimestamp)}
                       </div>
-                      <Textarea
-                        value={noteText}
-                        onChange={(e) => setNoteText(e.target.value)}
-                        placeholder="Capture your thought..."
-                        className="min-h-[110px] text-[14px] leading-relaxed bg-zinc-950/50 border-zinc-800/80 focus:border-indigo-500/50 focus:ring-0 rounded-xl resize-none placeholder:text-zinc-700"
-                        autoFocus
-                        onKeyDown={(
-                          e: React.KeyboardEvent<HTMLTextAreaElement>
-                        ) => {
-                          e.stopPropagation();
-                          if (e.key === "Enter" && e.ctrlKey) handleSaveNote();
-                          if (e.key === "Escape") handleCancelNote();
-                        }}
-                      />
+                      <div className="relative">
+                        <Textarea
+                          value={noteText}
+                          onChange={(e) => setNoteText(e.target.value)}
+                          placeholder="Capture your thought..."
+                          maxLength={1000}
+                          className="min-h-[110px] text-[14px] leading-relaxed bg-zinc-950/50 border-zinc-800/80 focus:border-indigo-500/50 focus:ring-0 rounded-xl resize-none placeholder:text-zinc-700 pr-12"
+                          autoFocus
+                          onKeyDown={(
+                            e: React.KeyboardEvent<HTMLTextAreaElement>
+                          ) => {
+                            e.stopPropagation();
+                            if (e.key === "Enter" && e.ctrlKey)
+                              handleSaveNote();
+                            if (e.key === "Escape") handleCancelNote();
+                          }}
+                        />
+                        <div
+                          className={`absolute bottom-3 right-3 text-[10px] font-bold ${
+                            noteText.length >= 1000
+                              ? "text-red-500"
+                              : "text-zinc-500"
+                          }`}
+                        >
+                          {noteText.length}/1000
+                        </div>
+                      </div>
                       <div className="flex justify-end gap-2.5">
                         <Button
                           variant="ghost"
@@ -468,20 +481,32 @@ export default function VideoNotes({
                           <div className="grow min-w-0">
                             {editingId === note.id ? (
                               <div className="space-y-3 animate-in fade-in duration-300">
-                                <Textarea
-                                  value={editingText}
-                                  onChange={(e) =>
-                                    setEditingText(e.target.value)
-                                  }
-                                  className="min-h-[90px] text-[14px] leading-relaxed bg-zinc-950 border-zinc-800 focus:border-indigo-500 focus:ring-0 rounded-xl resize-none"
-                                  autoFocus
-                                  onKeyDown={(e) => {
-                                    e.stopPropagation();
-                                    if (e.key === "Enter" && e.ctrlKey)
-                                      handleUpdateNote(note.id);
-                                    if (e.key === "Escape") cancelEditing();
-                                  }}
-                                />
+                                <div className="relative">
+                                  <Textarea
+                                    value={editingText}
+                                    onChange={(e) =>
+                                      setEditingText(e.target.value)
+                                    }
+                                    maxLength={1000}
+                                    className="min-h-[90px] text-[14px] leading-relaxed bg-zinc-950 border-zinc-800 focus:border-indigo-500 focus:ring-0 rounded-xl resize-none pr-12"
+                                    autoFocus
+                                    onKeyDown={(e) => {
+                                      e.stopPropagation();
+                                      if (e.key === "Enter" && e.ctrlKey)
+                                        handleUpdateNote(note.id);
+                                      if (e.key === "Escape") cancelEditing();
+                                    }}
+                                  />
+                                  <div
+                                    className={`absolute bottom-3 right-3 text-[10px] font-bold ${
+                                      editingText.length >= 1000
+                                        ? "text-red-500"
+                                        : "text-zinc-500"
+                                    }`}
+                                  >
+                                    {editingText.length}/1000
+                                  </div>
+                                </div>
                                 <div className="flex justify-end gap-2">
                                   <Button
                                     variant="ghost"

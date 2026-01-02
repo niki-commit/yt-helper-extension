@@ -3,14 +3,12 @@ import { browser } from "wxt/browser";
 import { Plus, Bookmark } from "lucide-react";
 import { localStore } from "@/storage/dexie";
 import { getCurrentTime, waitForPlayer } from "@/utils/youtube";
-import NotePopup from "./NotePopup";
 
 interface PlayerButtonsProps {
   videoId: string;
 }
 
 export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
-  const [showNotePopup, setShowNotePopup] = useState(false);
   const [hasBookmark, setHasBookmark] = useState(false);
 
   useEffect(() => {
@@ -79,22 +77,19 @@ export default function PlayerButtons({ videoId }: PlayerButtonsProps) {
       {/* Note Button */}
       <div className="relative flex items-center h-full">
         <button
-          onClick={() => setShowNotePopup(true)}
+          onClick={() => {
+            window.dispatchEvent(
+              new CustomEvent("yt-helper-open-quick-note", {
+                detail: { videoId },
+              })
+            );
+          }}
           className="flex items-center gap-1 px-2 mt-0.5 rounded-full h-full hover:bg-white/10 transition-colors text-white font-medium text-2xl whitespace-nowrap justify-center"
           title="Add Note"
         >
           <Plus className="w-6 h-6" />
           <span>Note</span>
         </button>
-
-        {showNotePopup && (
-          <div className="absolute bottom-full mb-4 right-0 z-1000">
-            <NotePopup
-              videoId={videoId}
-              onClose={() => setShowNotePopup(false)}
-            />
-          </div>
-        )}
       </div>
 
       {/* Bookmark Button */}

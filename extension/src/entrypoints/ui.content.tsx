@@ -13,6 +13,20 @@ export default defineContentScript({
   matches: ["*://*.youtube.com/*"],
   cssInjectionMode: "ui",
   async main(ctx) {
+    // ---- 0. Global forced visibility styles ----
+    const style = document.createElement("style");
+    style.textContent = `
+      .html5-video-player.yt-helper-showing-note .ytp-chrome-bottom,
+      .html5-video-player.yt-helper-showing-note .ytp-chrome-top,
+      .html5-video-player.yt-helper-showing-note .ytp-gradient-bottom,
+      .html5-video-player.yt-helper-showing-note .ytp-gradient-top {
+        opacity: 1 !important;
+        display: block !important;
+        visibility: visible !important;
+      }
+    `;
+    document.head.appendChild(style);
+
     // ---- 1. Responsive Sidebar Logic ----
     let desktopUi: any = null;
     let mobileUi: any = null;
