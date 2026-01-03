@@ -54,15 +54,28 @@ export default function VideoNotes({
 
   const [isAdActive, setIsAdActive] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile); // Default collapsed on mobile
+  const [isExternalNoteActive, setIsExternalNoteActive] = useState(false);
 
   useEffect(() => {
     const handleExpand = () => {
       if (isCollapsed) setIsCollapsed(false);
     };
+
+    const handleNoteUpdated = (e: any) => {
+      if (e.detail?.videoId === videoId) {
+        loadNotes();
+        checkBookmark();
+      }
+    };
+
     window.addEventListener("yt-helper-expand-notes", handleExpand);
-    return () =>
+    window.addEventListener("yt-helper-note-updated", handleNoteUpdated);
+
+    return () => {
       window.removeEventListener("yt-helper-expand-notes", handleExpand);
-  }, [isCollapsed]);
+      window.removeEventListener("yt-helper-note-updated", handleNoteUpdated);
+    };
+  }, [videoId, isCollapsed]);
 
   useEffect(() => {
     loadNotes();
@@ -82,7 +95,32 @@ export default function VideoNotes({
       }
     }, 1000);
 
-    return () => clearInterval(adCheckInterval);
+    const handleNoteStatus = (e: any) => {
+      if (e.detail?.status === "open") setIsExternalNoteActive(true);
+      else setIsExternalNoteActive(false);
+    };
+
+    const handleBookmarkUpdated = (e: any) => {
+      if (e.detail?.videoId === videoId) {
+        setHasBookmark(e.detail.hasBookmark);
+        setBookmarkTime(e.detail.bookmarkTime);
+      }
+    };
+
+    window.addEventListener("yt-helper-note-status", handleNoteStatus);
+    window.addEventListener(
+      "yt-helper-bookmark-updated",
+      handleBookmarkUpdated
+    );
+
+    return () => {
+      window.removeEventListener("yt-helper-note-status", handleNoteStatus);
+      window.removeEventListener(
+        "yt-helper-bookmark-updated",
+        handleBookmarkUpdated
+      );
+      clearInterval(adCheckInterval);
+    };
   }, [videoId]);
 
   const loadNotes = async () => {
@@ -124,6 +162,9 @@ export default function VideoNotes({
     setNoteText("");
     setIsAdding(true);
     pauseVideo();
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-note-status", { detail: { status: "open" } })
+    );
   };
 
   const handleSaveNote = async () => {
@@ -153,6 +194,11 @@ export default function VideoNotes({
       await localStore.saveNote(newNote);
       await loadNotes();
       setIsAdding(false);
+      window.dispatchEvent(
+        new CustomEvent("yt-helper-note-status", {
+          detail: { status: "closed" },
+        })
+      );
       playVideo();
     } catch (err) {
       console.error("Failed to save note:", err);
@@ -161,6 +207,9 @@ export default function VideoNotes({
 
   const handleCancelNote = () => {
     setIsAdding(false);
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-note-status", { detail: { status: "closed" } })
+    );
     playVideo();
   };
 
@@ -250,6 +299,12 @@ export default function VideoNotes({
     if (hasBookmark) {
       await localStore.setBookmark(videoId, null);
       setHasBookmark(false);
+      setBookmarkTime(null);
+      window.dispatchEvent(
+        new CustomEvent("yt-helper-bookmark-updated", {
+          detail: { videoId, hasBookmark: false, bookmarkTime: null },
+        })
+      );
     } else {
       // Wait for player to be ready before capturing timestamp
       const isReady = await waitForPlayer();
@@ -262,6 +317,11 @@ export default function VideoNotes({
       await localStore.setBookmark(videoId, time);
       setHasBookmark(true);
       setBookmarkTime(time);
+      window.dispatchEvent(
+        new CustomEvent("yt-helper-bookmark-updated", {
+          detail: { videoId, hasBookmark: true, bookmarkTime: time },
+        })
+      );
     }
   };
 
@@ -277,6 +337,8 @@ export default function VideoNotes({
 
   return (
     <div
+      onKeyDown={(e) => e.stopPropagation()}
+      onKeyUp={(e) => e.stopPropagation()}
       className={`my-6 w-full mx-auto font-sans text-[13px] antialiased text-zinc-200 selection:bg-indigo-500/30 ${
         isMobile ? "max-w-full px-4" : "max-w-[450px]"
       }`}
@@ -369,7 +431,14 @@ export default function VideoNotes({
                   size="sm"
                   onClick={handleAddNote}
                   className="h-9 px-4 gap-2 bg-white text-black hover:bg-zinc-200 font-extrabold text-[11px] uppercase tracking-wider rounded-xl shadow-lg disabled:opacity-50 ml-1 transition-all active:scale-95"
-                  disabled={isAdActive}
+                  disabled={isAdActive || isExternalNoteActive}
+                  title={
+                    isAdActive
+                      ? "Disabled during ads"
+                      : isExternalNoteActive
+                      ? "Note already in progress"
+                      : "Add Note"
+                  }
                 >
                   <Plus className="h-4 w-4 stroke-[3px]" /> Add Note
                 </Button>
@@ -412,10 +481,15 @@ export default function VideoNotes({
                           maxLength={1000}
                           className="min-h-[110px] text-[14px] leading-relaxed bg-zinc-950/50 border-zinc-800/80 focus:border-indigo-500/50 focus:ring-0 rounded-xl resize-none placeholder:text-zinc-700 pr-12"
                           autoFocus
+                          onFocus={(e) =>
+                            e.currentTarget.setSelectionRange(
+                              e.currentTarget.value.length,
+                              e.currentTarget.value.length
+                            )
+                          }
                           onKeyDown={(
                             e: React.KeyboardEvent<HTMLTextAreaElement>
                           ) => {
-                            e.stopPropagation();
                             if (e.key === "Enter" && e.ctrlKey)
                               handleSaveNote();
                             if (e.key === "Escape") handleCancelNote();
@@ -490,8 +564,13 @@ export default function VideoNotes({
                                     maxLength={1000}
                                     className="min-h-[90px] text-[14px] leading-relaxed bg-zinc-950 border-zinc-800 focus:border-indigo-500 focus:ring-0 rounded-xl resize-none pr-12"
                                     autoFocus
+                                    onFocus={(e) =>
+                                      e.currentTarget.setSelectionRange(
+                                        e.currentTarget.value.length,
+                                        e.currentTarget.value.length
+                                      )
+                                    }
                                     onKeyDown={(e) => {
-                                      e.stopPropagation();
                                       if (e.key === "Enter" && e.ctrlKey)
                                         handleUpdateNote(note.id);
                                       if (e.key === "Escape") cancelEditing();

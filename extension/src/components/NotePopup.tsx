@@ -41,12 +41,27 @@ export default function NotePopup({
       player.classList.add("yt-helper-showing-note");
     }
 
-    // Focus textarea
+    // Focus textarea and move cursor to end
     setTimeout(() => {
-      textareaRef.current?.focus();
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const len = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(len, len);
+      }
     }, 100);
 
+    // Dispatch status event so other UIs can disable their buttons
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-note-status", { detail: { status: "open" } })
+    );
+
     return () => {
+      // Dispatch status event so other UIs can re-enable their buttons
+      window.dispatchEvent(
+        new CustomEvent("yt-helper-note-status", {
+          detail: { status: "closed" },
+        })
+      );
       if (player) {
         player.classList.remove("yt-helper-showing-note");
       }
@@ -79,6 +94,10 @@ export default function NotePopup({
       });
 
       playVideo(); // Resume
+      // Notify components that a note was updated (for sidebar refresh)
+      window.dispatchEvent(
+        new CustomEvent("yt-helper-note-updated", { detail: { videoId } })
+      );
       onClose();
     } catch (error) {
       console.error("Failed to save note", error);
@@ -105,6 +124,8 @@ export default function NotePopup({
         />
       )}
       <div
+        onKeyDown={(e) => e.stopPropagation()}
+        onKeyUp={(e) => e.stopPropagation()}
         className={`${modalClasses} z-10001 w-[500px] bg-[#0f0f0f] backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200`}
       >
         <div className="p-6 space-y-4">
