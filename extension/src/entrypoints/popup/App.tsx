@@ -1,9 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Cloud, CloudOff, CheckCircle2, ArrowUpRight } from "lucide-react";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { CloudOff } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   getSettings,
   updateSettings,
@@ -11,6 +9,9 @@ import {
   defaultSettings,
 } from "@/storage/settings";
 import { authActions } from "@/utils/auth";
+import { SettingsTab } from "./Tabs/SettingsTab";
+import { NotesTab } from "./Tabs/NotesTab";
+import { BookmarksTab } from "./Tabs/BookmarksTab";
 import "@/styles/globals.css";
 
 function App() {
@@ -62,9 +63,9 @@ function App() {
   };
 
   return (
-    <div className="dark w-[360px] p-6 bg-[#020617] text-zinc-200 font-sans antialiased selection:bg-indigo-500/30">
+    <div className="dark w-[420px] p-4 bg-[#020617] text-zinc-200 font-sans antialiased selection:bg-indigo-500/30">
       <Card className="border-none shadow-none bg-transparent">
-        <CardHeader className="p-0 pb-8 flex flex-row items-start justify-between">
+        <CardHeader className="p-0 pb-3 flex flex-row items-start justify-between">
           <div className="space-y-1">
             <CardTitle className="text-2xl font-black tracking-tighter text-white">
               Video<span className="text-indigo-500">Notes</span>
@@ -92,103 +93,32 @@ function App() {
           )}
         </CardHeader>
 
-        <CardContent className="p-0 space-y-8">
-          <div className="space-y-5">
-            <div className="flex items-center justify-between group">
-              <div className="space-y-1">
-                <Label
-                  htmlFor="auto-pause"
-                  className="text-sm font-bold text-zinc-200 group-hover:text-white transition-colors cursor-pointer"
-                >
-                  Auto-Pause
-                </Label>
-                <div className="text-[11px] text-zinc-500 font-medium">
-                  Pause when switching focus
-                </div>
-              </div>
-              <Switch
-                id="auto-pause"
-                checked={settings.autoPauseEnabled}
-                onCheckedChange={toggleAutoPause}
-                className="data-[state=checked]:bg-indigo-600 border-zinc-700 bg-zinc-800/50"
-              />
-            </div>
+        <Tabs defaultValue="notes" className="w-full">
+          <TabsList className="w-full grid grid-cols-3 mb-2">
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="bookmarks">Bookmarks</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
 
-            <div className="flex items-center justify-between group">
-              <div className="space-y-1">
-                <Label
-                  htmlFor="distraction-free"
-                  className="text-sm font-bold text-zinc-200 group-hover:text-white transition-colors cursor-pointer"
-                >
-                  Focus Mode
-                </Label>
-                <div className="text-[11px] text-zinc-500 font-medium">
-                  Hide sidebars & comments
-                </div>
-              </div>
-              <Switch
-                id="distraction-free"
-                checked={settings.distractionFreeEnabled}
-                onCheckedChange={toggleDistraction}
-                className="data-[state=checked]:bg-indigo-600 border-zinc-700 bg-zinc-800/50"
-              />
-            </div>
-          </div>
+          <TabsContent value="notes" className="mt-0">
+            <NotesTab />
+          </TabsContent>
 
-          <div className="pt-8 border-t border-zinc-200/5">
-            {isAuthenticated === null ? (
-              <div className="h-20 w-full bg-white/[0.02] animate-pulse rounded-2xl" />
-            ) : isAuthenticated ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-4 p-4 bg-white/[0.03] rounded-2xl border border-zinc-200/5 hover:bg-white/[0.05] transition-all group">
-                  <div className="p-2.5 bg-indigo-500/10 rounded-xl">
-                    <Cloud className="w-5 h-5 text-indigo-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-[13px] font-bold text-white">
-                      Dashboard Live
-                    </p>
-                    <p className="text-[10px] text-zinc-500 font-medium font-mono uppercase tracking-tighter">
-                      100% Security Guaranteed
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 rounded-xl hover:bg-zinc-800 transition-all"
-                    asChild
-                  >
-                    <a
-                      href="http://localhost:3000"
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      <ArrowUpRight className="w-5 h-5 text-zinc-400 group-hover:text-white transition-colors" />
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <div className="text-center space-y-2 px-4">
-                  <p className="text-[13px] font-bold text-white italic">
-                    Unlock Global Learning
-                  </p>
-                  <p className="text-[11px] text-zinc-500 leading-relaxed">
-                    Enable cloud sync to access your library on all devices.
-                  </p>
-                </div>
-                <Button
-                  className="w-full bg-white text-black hover:bg-zinc-200 font-black text-xs uppercase tracking-widest rounded-xl h-12 shadow-lg transition-transform active:scale-95"
-                  onClick={handleLinkAccount}
-                  disabled={isLinking}
-                >
-                  {isLinking ? "Connecting..." : "Link My Account"}
-                </Button>
-              </div>
-            )}
-          </div>
-        </CardContent>
+          <TabsContent value="bookmarks" className="mt-0">
+            <BookmarksTab />
+          </TabsContent>
+
+          <TabsContent value="settings" className="mt-1">
+            <SettingsTab
+              settings={settings}
+              isAuthenticated={isAuthenticated}
+              isLinking={isLinking}
+              onToggleAutoPause={toggleAutoPause}
+              onToggleDistraction={toggleDistraction}
+              onLinkAccount={handleLinkAccount}
+            />
+          </TabsContent>
+        </Tabs>
       </Card>
 
       <div className="mt-6 flex justify-center">

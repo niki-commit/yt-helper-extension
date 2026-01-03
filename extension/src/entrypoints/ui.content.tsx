@@ -203,6 +203,23 @@ export default defineContentScript({
       setDistractionFreeMode(settings.distractionFreeEnabled);
     });
 
+    // ---- 5. Messaging Bridge (Popup -> Content Script) ----
+    browser.runtime.onMessage.addListener((message) => {
+      if (message.type === "BOOKMARK_UPDATED") {
+        const { videoId, hasBookmark, bookmarkTime } = message.payload;
+        window.dispatchEvent(
+          new CustomEvent("yt-helper-bookmark-updated", {
+            detail: { videoId, hasBookmark, bookmarkTime },
+          })
+        );
+      }
+    });
+
+    ctx.onInvalidated(() => {
+      stopAutoPause();
+      unwatch();
+    });
+
     // Flag to stop all activity if context is invalidated
     let isDead = false;
     const checkDead = () => {

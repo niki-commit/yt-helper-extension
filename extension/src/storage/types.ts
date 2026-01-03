@@ -11,6 +11,7 @@ export interface Note {
 export interface VideoRecord {
   videoId: string;
   title?: string;
+  channelName?: string;
   thumbnailUrl?: string;
   bookmarkTimestamp?: number | null; // seconds
   hideRecommendations?: boolean;

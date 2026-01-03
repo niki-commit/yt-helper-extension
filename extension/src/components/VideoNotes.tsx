@@ -186,11 +186,22 @@ export default function VideoNotes({
     try {
       // Capture video metadata for better sync/gallery display
       const title = document.title.replace(" - YouTube", "") || "YouTube Video";
+      const channelName =
+        document
+          .querySelector("ytd-video-owner-renderer #channel-name a")
+          ?.textContent?.trim() ||
+        (
+          document.querySelector(
+            '[itemprop="author"] [itemprop="name"]'
+          ) as HTMLMetaElement
+        )?.content ||
+        "";
       const video = await localStore.getVideo(videoId);
       await localStore.saveVideo({
         ...video,
         videoId: videoId,
         title: title,
+        channelName: channelName,
         thumbnailUrl: `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
         lastVisitedAt: Date.now(),
       });
