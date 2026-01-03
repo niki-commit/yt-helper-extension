@@ -55,6 +55,7 @@ export default function VideoNotes({
   const [isAdActive, setIsAdActive] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(isMobile); // Default collapsed on mobile
   const [isExternalNoteActive, setIsExternalNoteActive] = useState(false);
+  const [isBookmarkedFlash, setIsBookmarkedFlash] = useState(false);
 
   useEffect(() => {
     const handleExpand = () => {
@@ -127,6 +128,9 @@ export default function VideoNotes({
     try {
       const loaded = await localStore.getNotes(videoId);
       setNotes(loaded);
+      // Sort by timestamp descending (latest in video first)
+      // const sorted = [...loaded].sort((a, b) => b.timestamp - a.timestamp);
+      // setNotes(sorted);
     } catch (err) {
       // Silently fail or handle gracefully in production
     }
@@ -293,36 +297,42 @@ export default function VideoNotes({
     n.text.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const toggleBookmark = async () => {
+  const updateBookmark = async () => {
     if (isAdActive) return;
 
-    if (hasBookmark) {
-      await localStore.setBookmark(videoId, null);
-      setHasBookmark(false);
-      setBookmarkTime(null);
-      window.dispatchEvent(
-        new CustomEvent("yt-helper-bookmark-updated", {
-          detail: { videoId, hasBookmark: false, bookmarkTime: null },
-        })
-      );
-    } else {
-      // Wait for player to be ready before capturing timestamp
-      const isReady = await waitForPlayer();
-      if (!isReady) {
-        console.warn("Player not ready, cannot set bookmark");
-        return;
-      }
-
-      const time = getCurrentTime();
-      await localStore.setBookmark(videoId, time);
-      setHasBookmark(true);
-      setBookmarkTime(time);
-      window.dispatchEvent(
-        new CustomEvent("yt-helper-bookmark-updated", {
-          detail: { videoId, hasBookmark: true, bookmarkTime: time },
-        })
-      );
+    // Wait for player to be ready before capturing timestamp
+    const isReady = await waitForPlayer();
+    if (!isReady) {
+      console.warn("Player not ready, cannot set bookmark");
+      return;
     }
+
+    const time = getCurrentTime();
+    await localStore.setBookmark(videoId, time);
+    setHasBookmark(true);
+    setBookmarkTime(time);
+
+    // Trigger Success Flash
+    setIsBookmarkedFlash(true);
+    setTimeout(() => setIsBookmarkedFlash(false), 800);
+
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-bookmark-updated", {
+        detail: { videoId, hasBookmark: true, bookmarkTime: time },
+      })
+    );
+  };
+
+  const deleteBookmark = async () => {
+    if (isAdActive) return;
+    await localStore.setBookmark(videoId, null);
+    setHasBookmark(false);
+    setBookmarkTime(null);
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-bookmark-updated", {
+        detail: { videoId, hasBookmark: false, bookmarkTime: null },
+      })
+    );
   };
 
   const resumeVideo = () => {
@@ -387,32 +397,55 @@ export default function VideoNotes({
             {(!isMobile || !isCollapsed) && (
               <>
                 {hasBookmark && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={resumeVideo}
-                    className="h-9 px-4 text-[11px] font-black uppercase tracking-[0.05em] border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 hover:text-white transition-all rounded-xl gap-2 group"
-                    disabled={isAdActive}
-                  >
-                    <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
-                    Resume {bookmarkTime ? formatTime(bookmarkTime) : ""}
-                  </Button>
+                  <div className="flex items-center group/resume">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={resumeVideo}
+                      className="h-9 px-4 text-[11px] font-black uppercase tracking-[0.05em] border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 hover:text-white transition-all rounded-l-xl rounded-r-none border-r-0 gap-2 group"
+                      disabled={isAdActive}
+                    >
+                      <Play className="w-4 h-4 fill-current group-hover:scale-110 transition-transform" />
+                      Resume {bookmarkTime ? formatTime(bookmarkTime) : ""}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteBookmark();
+                      }}
+                      className="h-9 w-8 border-zinc-800 bg-zinc-900/50 hover:bg-red-500/10 hover:text-red-500 transition-all rounded-r-xl rounded-l-none border-l-0 text-zinc-500"
+                      disabled={isAdActive}
+                      title="Delete Bookmark"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 )}
 
                 <Button
-                  variant={hasBookmark ? "default" : "ghost"}
+                  variant={isBookmarkedFlash ? "default" : "ghost"}
                   size="icon"
-                  className={`h-9 w-9 rounded-xl transition-all ${
-                    hasBookmark
-                      ? "bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]"
+                  className={`h-9 w-9 rounded-xl transition-all duration-300 ${
+                    isBookmarkedFlash
+                      ? "bg-indigo-600 text-white scale-110 shadow-[0_0_20px_rgba(79,70,229,0.5)]"
                       : "text-zinc-300 hover:text-white hover:bg-zinc-800 border border-transparent hover:border-zinc-700"
                   }`}
-                  onClick={toggleBookmark}
-                  title="Bookmark Moment"
+                  onClick={updateBookmark}
+                  title={
+                    hasBookmark
+                      ? "Update Bookmark to current time"
+                      : "Bookmark Moment"
+                  }
                   disabled={isAdActive}
                 >
                   <Bookmark
-                    className={`h-5 w-5 ${hasBookmark ? "fill-current" : ""}`}
+                    className={`h-5 w-5 transition-all duration-300 ${
+                      isBookmarkedFlash && !isAdActive
+                        ? "fill-current text-white scale-110"
+                        : "text-zinc-400"
+                    }`}
                   />
                 </Button>
 
@@ -440,7 +473,7 @@ export default function VideoNotes({
                       : "Add Note"
                   }
                 >
-                  <Plus className="h-4 w-4 stroke-[3px]" /> Add Note
+                  <Plus className="h-4 w-4 stroke-[3px]" /> Note
                 </Button>
               </>
             )}
@@ -530,7 +563,7 @@ export default function VideoNotes({
                       <div className="w-16 h-16 rounded-full border-2 border-dashed border-zinc-700 flex items-center justify-center mb-5 animate-pulse">
                         <Search className="w-7 h-7 text-zinc-600" />
                       </div>
-                      <p className="text-[12px] font-black uppercase tracking-[0.2em] text-zinc-500">
+                      <p className="text-[12px] font-black uppercase tracking-[0.2em] text-zinc-400">
                         Insight Vault Empty
                       </p>
                     </div>

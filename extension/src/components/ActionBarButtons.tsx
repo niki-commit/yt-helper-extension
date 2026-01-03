@@ -1,4 +1,4 @@
-import { Plus, Bookmark, Play } from "lucide-react";
+import { Plus, Bookmark, Play, X } from "lucide-react";
 import { localStore } from "@/storage/dexie";
 import {
   getCurrentTime,
@@ -19,6 +19,7 @@ export default function ActionBarButtons({ videoId }: ActionBarButtonsProps) {
   const [bookmarkTime, setBookmarkTime] = useState<number | null>(null);
   const [isAdActive, setIsAdActive] = useState(false);
   const [isExternalNoteActive, setIsExternalNoteActive] = useState(false);
+  const [isBookmarkedFlash, setIsBookmarkedFlash] = useState(false);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 1024);
 
@@ -88,26 +89,31 @@ export default function ActionBarButtons({ videoId }: ActionBarButtonsProps) {
     const isReady = await waitForPlayer();
     if (!isReady) return;
 
-    if (hasBookmark) {
-      await localStore.setBookmark(videoId, null);
-      setHasBookmark(false);
-      setBookmarkTime(null);
-      window.dispatchEvent(
-        new CustomEvent("yt-helper-bookmark-updated", {
-          detail: { videoId, hasBookmark: false, bookmarkTime: null },
-        })
-      );
-    } else {
-      const time = getCurrentTime();
-      await localStore.setBookmark(videoId, time);
-      setHasBookmark(true);
-      setBookmarkTime(time);
-      window.dispatchEvent(
-        new CustomEvent("yt-helper-bookmark-updated", {
-          detail: { videoId, hasBookmark: true, bookmarkTime: time },
-        })
-      );
-    }
+    const time = getCurrentTime();
+    await localStore.setBookmark(videoId, time);
+    setHasBookmark(true);
+    setBookmarkTime(time);
+
+    // Trigger Success Flash
+    setIsBookmarkedFlash(true);
+    setTimeout(() => setIsBookmarkedFlash(false), 800);
+
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-bookmark-updated", {
+        detail: { videoId, hasBookmark: true, bookmarkTime: time },
+      })
+    );
+  };
+
+  const deleteBookmark = async () => {
+    await localStore.setBookmark(videoId, null);
+    setHasBookmark(false);
+    setBookmarkTime(null);
+    window.dispatchEvent(
+      new CustomEvent("yt-helper-bookmark-updated", {
+        detail: { videoId, hasBookmark: false, bookmarkTime: null },
+      })
+    );
   };
 
   return (
@@ -147,44 +153,65 @@ export default function ActionBarButtons({ videoId }: ActionBarButtonsProps) {
       </div>
 
       {hasBookmark && bookmarkTime !== null && (
-        <button
-          onClick={() => {
-            if (!isAdActive) seekTo(bookmarkTime);
-          }}
-          className={`flex items-center gap-1.5 px-3 h-9 rounded-full bg-zinc-800 hover:bg-zinc-700 transition-all border border-zinc-700/50 group whitespace-nowrap ${
-            isAdActive ? "opacity-50 cursor-default" : "active:scale-95"
-          }`}
-          title={`Resume from ${formatTime(bookmarkTime)}`}
-          disabled={isAdActive}
-        >
-          <Play className="w-3.5 h-3.5 fill-current text-indigo-400 group-hover:scale-110 transition-transform" />
-          <span className="text-[11px] font-black uppercase tracking-wider text-zinc-300 group-hover:text-white">
-            Resume {formatTime(bookmarkTime)}
-          </span>
-        </button>
+        <div className="flex items-center group">
+          <button
+            onClick={() => {
+              if (!isAdActive) seekTo(bookmarkTime);
+            }}
+            className={`flex items-center gap-1.5 px-3 h-9 rounded-l-full bg-zinc-800 hover:bg-zinc-700 transition-all border border-zinc-700/50 whitespace-nowrap border-r-0 ${
+              isAdActive ? "opacity-50 cursor-default" : "active:scale-95"
+            }`}
+            title={`Resume from ${formatTime(bookmarkTime)}`}
+            disabled={isAdActive}
+          >
+            <Play className="w-3.5 h-3.5 fill-current text-indigo-400 group-hover:scale-110 transition-transform" />
+            <span className="text-[11px] font-black uppercase tracking-wider text-zinc-300 group-hover:text-white">
+              Resume {formatTime(bookmarkTime)}
+            </span>
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              if (!isAdActive) deleteBookmark();
+            }}
+            className={`flex items-center justify-center w-8 h-9 rounded-r-full bg-zinc-800 hover:bg-red-500/20 transition-all border border-zinc-700/50 border-l-0 text-zinc-500 hover:text-red-500 ${
+              isAdActive ? "opacity-50 cursor-default" : ""
+            }`}
+            title="Delete Bookmark"
+            disabled={isAdActive}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
       )}
 
       <button
         onClick={() => {
           if (!isAdActive) handleBookmark();
         }}
-        className={`flex items-center justify-center w-9 h-9 rounded-full transition-colors ${
+        className={`flex items-center justify-center w-9 h-9 rounded-full transition-all duration-300 ${
           isAdActive
             ? "bg-white/5 text-zinc-500 cursor-default opacity-50"
-            : hasBookmark
-            ? "bg-indigo-600 hover:bg-indigo-500 text-white"
+            : isBookmarkedFlash
+            ? "bg-indigo-600 text-white scale-110 shadow-[0_0_15px_rgba(79,70,229,0.6)]"
             : "bg-white/10 hover:bg-white/20 text-white"
         }`}
         title={
           isAdActive
             ? "Disabled during ads"
             : hasBookmark
-            ? "Remove Bookmark"
+            ? "Update Bookmark to current time"
             : "Bookmark this timestamp"
         }
         disabled={isAdActive}
       >
-        <Bookmark className={`w-6 h-6 ${hasBookmark ? "fill-current" : ""}`} />
+        <Bookmark
+          className={`w-6 h-6 transition-all duration-300 ${
+            isBookmarkedFlash && !isAdActive
+              ? "fill-current text-white scale-110"
+              : "text-zinc-400"
+          }`}
+        />
       </button>
     </div>
   );
