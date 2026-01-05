@@ -123,8 +123,23 @@ export class DexieStorageAdapter implements StorageAdapter {
     return await db.notes.toArray();
   }
 
-  private async _getAllVideos(): Promise<VideoRecord[]> {
-    return await db.videos.toArray();
+  private async _getAllVideos(): Promise<
+    (VideoRecord & { _count?: { notes: number } })[]
+  > {
+    const videos = await db.videos.toArray();
+    const result = await Promise.all(
+      videos.map(async (v) => {
+        const notesCount = await db.notes
+          .where("videoId")
+          .equals(v.videoId)
+          .count();
+        return {
+          ...v,
+          _count: { notes: notesCount },
+        };
+      })
+    );
+    return result;
   }
 }
 

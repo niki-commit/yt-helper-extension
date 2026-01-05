@@ -8,7 +8,11 @@ export default defineConfig({
     name: "VideoNotes",
     description: "Distraction-free YouTube learning with timestamped notes",
     permissions: ["storage", "identity", "tabs"],
-    host_permissions: ["https://*.supabase.co/*", "http://localhost:3000/*"],
+    host_permissions: [
+      "https://*.supabase.co/*",
+      "http://localhost/*",
+      "http://127.0.0.1/*",
+    ],
   },
   vite: () => ({
     build: {

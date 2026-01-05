@@ -9,6 +9,7 @@ export default defineBackground(() => {
     // 1. Handle DB Proxy Calls
     if (message.type === "DB_CALL") {
       const { method, args } = message;
+      console.log(`Background: Received DB_CALL for ${method}`, args);
       const internalMethod = `_${method}`;
       const target = localStore as any;
 

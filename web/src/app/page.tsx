@@ -1,8 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import prisma from "@/lib/prisma";
-import { Library, PlusCircle, Search } from "lucide-react";
-import { VideoCard } from "@/components/VideoCard";
-import { GalleryGrid } from "@/components/GalleryGrid";
+import { Youtube, Zap, BookOpen, Clock, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function Home() {
@@ -11,102 +8,149 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) return null;
-
-  // Ensure Profile is up to date in Prisma
-  await prisma.profile.upsert({
-    where: { id: user.id },
-    update: {
-      fullName: user.user_metadata.full_name,
-      avatarUrl: user.user_metadata.avatar_url,
-      email: user.email!,
-    },
-    create: {
-      id: user.id,
-      fullName: user.user_metadata.full_name,
-      avatarUrl: user.user_metadata.avatar_url,
-      email: user.email!,
-    },
-  });
-
-  // Fetch real data from Prisma
-  const videos = await prisma.video.findMany({
-    where: { userId: user.id },
-    include: {
-      _count: {
-        select: { notes: true },
-      },
-    },
-    orderBy: {
-      lastWatchedAt: "desc",
-    },
-  });
-
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-      {/* Hero Section */}
-      <header className="mb-16 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-900/10 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest animate-pulse">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
-            </span>
-            Live Sync Active
+    <div className="relative isolate overflow-hidden bg-white dark:bg-zinc-950">
+      {/* Background decoration */}
+      <div className="absolute inset-x-0 -top-40 -z-10 transform-gpu overflow-hidden blur-3xl sm:-top-80">
+        <div
+          className="relative left-[calc(50%-11rem)] aspect-1155/678 w-144.5 -translate-x-1/2 rotate-30 bg-linear-to-tr from-[#ff80b5] to-[#9089fc] opacity-20 sm:left-[calc(50%-30rem)] sm:w-288.75"
+          style={{
+            clipPath:
+              "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
+          }}
+        />
+      </div>
+
+      <div className="mx-auto max-w-7xl px-6 pb-24 pt-10 sm:pb-32 lg:flex lg:px-8 lg:py-40">
+        <div className="mx-auto max-w-2xl shrink-0 lg:mx-0 lg:max-w-xl lg:pt-8">
+          <div className="mt-24 sm:mt-32 lg:mt-16">
+            <a href="#" className="inline-flex space-x-6">
+              <span className="rounded-full bg-indigo-500/10 px-3 py-1 text-sm font-semibold leading-6 text-indigo-400 ring-1 ring-inset ring-indigo-500/20">
+                What's new
+              </span>
+              <span className="inline-flex items-center space-x-2 text-sm font-medium leading-6 text-zinc-400">
+                <span>Just shipped v1.0</span>
+                <ArrowRight className="h-4 w-4" />
+              </span>
+            </a>
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl lg:text-6xl">
-            Welcome back,{" "}
+          <h1 className="mt-10 text-4xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-6xl text-balance">
+            Master YouTube Learning with{" "}
             <span className="text-indigo-600 dark:text-indigo-400">
-              {user.user_metadata.full_name?.split(" ")[0]}
+              YT Helper
             </span>
           </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl font-medium">
-            Manage your study sessions and review your insights across{" "}
-            {videos.length} videos.
+          <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            The ultimate companion for students and lifelong learners. Take
+            time-stamped notes, bookmark key moments, and organize your
+            knowledge from any YouTube video.
           </p>
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center -space-x-2 overflow-hidden">
-            {/* Mock avatars or real user circle */}
-            <div className="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-zinc-900 bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center text-xs font-bold overflow-hidden">
-              {user.user_metadata.avatar_url ? (
-                <img src={user.user_metadata.avatar_url} alt="User" />
-              ) : (
-                user.user_metadata.full_name?.[0]
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Grid Content */}
-      {videos.length > 0 ? (
-        <GalleryGrid initialVideos={videos} />
-      ) : (
-        /* Empty State */
-        <div className="flex flex-col items-center justify-center py-20 px-6 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 text-center">
-          <div className="p-6 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 mb-8">
-            <Library className="h-12 w-12 text-zinc-300 dark:text-zinc-700 mx-auto" />
-          </div>
-          <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-            No sessions synced yet
-          </h2>
-          <p className="mt-3 text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto">
-            Open a YouTube video and use the VideoNotes extension to start
-            taking notes. Your sessions will appear here automatically.
-          </p>
-          <div className="mt-8">
+          <div className="mt-10 flex items-center gap-x-6">
+            {user ? (
+              <Link
+                href="/dashboard"
+                className="rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all font-outfit"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-xl bg-indigo-600 px-6 py-3.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600 transition-all font-outfit"
+              >
+                Get Started
+              </Link>
+            )}
             <Link
-              href="/login?source=extension"
-              className="inline-flex items-center gap-2 rounded-xl bg-zinc-900 px-8 py-4 text-sm font-semibold text-white transition-all hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200 shadow-lg shadow-indigo-500/10"
+              href="#features"
+              className="text-sm font-semibold leading-6 text-zinc-900 dark:text-zinc-50"
             >
-              Get Extension
-              <PlusCircle className="h-4 w-4" />
+              Learn more <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>
-      )}
+
+        <div className="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:ml-10 lg:mr-0 lg:mt-0 lg:max-w-none lg:flex-none xl:ml-32">
+          <div className="max-w-3xl flex-none sm:max-w-5xl lg:max-w-none">
+            <div className="-m-2 rounded-xl bg-zinc-900/5 p-2 ring-1 ring-inset ring-zinc-900/10 lg:-m-4 lg:rounded-2xl lg:p-4 dark:bg-white/5 dark:ring-white/10">
+              <div className="rounded-md bg-white dark:bg-zinc-900 shadow-2xl ring-1 ring-zinc-900/10 dark:ring-white/10 overflow-hidden aspect-video w-[600px] flex items-center justify-center">
+                {/* Placeholder for product screenshot */}
+                <div className="text-center p-8">
+                  <Youtube className="h-16 w-16 text-red-600 mx-auto mb-4" />
+                  <p className="text-zinc-500 font-medium">Extension Preview</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Features Section */}
+      <div id="features" className="py-24 sm:py-32">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl lg:text-center">
+            <h2 className="text-base font-semibold leading-7 text-indigo-400">
+              Study Smarter
+            </h2>
+            <p className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
+              Everything you need to learn from video
+            </p>
+            <p className="mt-6 text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+              Stop pausing and switching tabs. Manage your learning experience
+              directly within the YouTube player.
+            </p>
+          </div>
+          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
+            <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
+              <div className="flex flex-col">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-zinc-900 dark:text-zinc-50">
+                  <Zap
+                    className="h-5 w-5 flex-none text-indigo-400"
+                    aria-hidden="true"
+                  />
+                  Time-stamped Notes
+                </dt>
+                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600 dark:text-zinc-400">
+                  <p className="flex-auto">
+                    Create notes tied to specific moments in the video. Click to
+                    jump back anytime.
+                  </p>
+                </dd>
+              </div>
+              <div className="flex flex-col">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-zinc-900 dark:text-zinc-50">
+                  <BookOpen
+                    className="h-5 w-5 flex-none text-indigo-400"
+                    aria-hidden="true"
+                  />
+                  Smart Bookmarks
+                </dt>
+                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600 dark:text-zinc-400">
+                  <p className="flex-auto">
+                    Save important chapters and segments to review later with
+                    ease.
+                  </p>
+                </dd>
+              </div>
+              <div className="flex flex-col">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-zinc-900 dark:text-zinc-50">
+                  <Clock
+                    className="h-5 w-5 flex-none text-indigo-400"
+                    aria-hidden="true"
+                  />
+                  Auto-Sync
+                </dt>
+                <dd className="mt-4 flex flex-auto flex-col text-base leading-7 text-zinc-600 dark:text-zinc-400">
+                  <p className="flex-auto">
+                    All your data is synced instantly across devices. Access
+                    your insights anywhere.
+                  </p>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
