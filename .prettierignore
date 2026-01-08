@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.next/
+.wxt/
+.output/
+dist/
+.git/
+
+# Generated files (Prisma, etc.)
+**/generated/
+
+# Generated files
+*.lock
+package-lock.json
+
+# IDE
+.vscode/
+.idea/
+.gemini/
+
+# Misc
+*.log

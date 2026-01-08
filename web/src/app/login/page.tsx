@@ -9,12 +9,12 @@ export default async function LoginPage(props: {
   const error = searchParams.error;
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-6">
-      <div className="w-full max-w-md space-y-8 rounded-2xl bg-white p-8 shadow-xl dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 transition-all duration-300 hover:shadow-2xl">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-zinc-50 p-6 dark:bg-zinc-950">
+      <div className="w-full max-w-md space-y-8 rounded-2xl border border-zinc-200 bg-white p-8 shadow-xl transition-all duration-300 hover:shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
         <div className="text-center">
-          <div className="flex justify-center mb-6">
-            <div className="p-3 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl">
-              <Puzzle className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+          <div className="mb-6 flex justify-center">
+            <div className="rounded-2xl bg-indigo-50 p-3 dark:bg-indigo-900/30">
+              <Puzzle className="h-10 w-10 text-indigo-600 dark:text-indigo-400" />
             </div>
           </div>
           <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50">
@@ -28,7 +28,7 @@ export default async function LoginPage(props: {
         </div>
 
         {error && (
-          <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900/30 rounded-xl text-sm text-red-600 dark:text-red-400 text-center">
+          <div className="rounded-xl border border-red-100 bg-red-50 p-3 text-center text-sm text-red-600 dark:border-red-900/30 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
@@ -41,7 +41,7 @@ export default async function LoginPage(props: {
             )}
             <button
               type="submit"
-              className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-zinc-900 px-4 py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
+              className="group relative flex w-full items-center justify-center gap-3 rounded-xl bg-zinc-900 px-4 py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-zinc-800 focus:ring-2 focus:ring-zinc-900 focus:ring-offset-2 focus:outline-none dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path
@@ -64,7 +64,7 @@ export default async function LoginPage(props: {
               <span>
                 {isExtension ? "Link with Google" : "Sign in with Google"}
               </span>
-              <div className="absolute inset-0 rounded-xl ring-1 ring-inset ring-zinc-200 dark:ring-white/10 group-hover:ring-zinc-300 dark:group-hover:ring-white/20 transition-all duration-200" />
+              <div className="absolute inset-0 rounded-xl ring-1 ring-zinc-200 transition-all duration-200 ring-inset group-hover:ring-zinc-300 dark:ring-white/10 dark:group-hover:ring-white/20" />
             </button>
           </form>
 

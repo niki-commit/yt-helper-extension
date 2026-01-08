@@ -1,0 +1,32 @@
+{
+  "name": "yt-helper-extension",
+  "version": "1.0.0",
+  "description": "Youtube Helper Extension",
+  "scripts": {
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint:web": "cd web && npm run lint",
+    "lint:ext": "cd extension && eslint src/",
+    "lint": "npm run lint:web && npm run lint:ext"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/niki-commit/yt-helper-extension.git"
+  },
+  "keywords": [
+    "youtube",
+    "helper",
+    "extension"
+  ],
+  "author": "Ravuri Nikhil",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/niki-commit/yt-helper-extension/issues"
+  },
+  "homepage": "https://github.com/niki-commit/yt-helper-extension#readme",
+  "devDependencies": {
+    "prettier": "^3.7.4",
+    "prettier-plugin-tailwindcss": "^0.7.2"
+  }
+}

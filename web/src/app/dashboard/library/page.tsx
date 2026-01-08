@@ -55,17 +55,17 @@ export default async function LibraryPage() {
       {/* Hero Section */}
       <header className="mb-12">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 dark:bg-indigo-900/30 border border-indigo-100 dark:border-indigo-900/10 text-xs font-bold text-indigo-600 dark:text-indigo-400 uppercase tracking-widest animate-pulse">
+          <div className="inline-flex animate-pulse items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-bold tracking-widest text-indigo-600 uppercase dark:border-indigo-900/10 dark:bg-indigo-900/30 dark:text-indigo-400">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
             </span>
             Live Sync Active
           </div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
+          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl dark:text-zinc-50">
             Your Library
           </h1>
-          <p className="text-lg text-zinc-600 dark:text-zinc-400 max-w-2xl font-medium">
+          <p className="max-w-2xl text-lg font-medium text-zinc-600 dark:text-zinc-400">
             {videos.length} videos with notes or bookmarks
           </p>
         </div>
@@ -76,14 +76,14 @@ export default async function LibraryPage() {
         <LibraryGrid initialVideos={videos} />
       ) : (
         /* Empty State */
-        <div className="flex flex-col items-center justify-center py-20 px-6 rounded-3xl border-2 border-dashed border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-950/20 text-center">
-          <div className="p-6 bg-white dark:bg-zinc-900 rounded-2xl shadow-xl border border-zinc-100 dark:border-zinc-800 mb-8">
-            <Library className="h-12 w-12 text-zinc-300 dark:text-zinc-700 mx-auto" />
+        <div className="flex flex-col items-center justify-center rounded-3xl border-2 border-dashed border-zinc-200 bg-zinc-50/50 px-6 py-20 text-center dark:border-zinc-800 dark:bg-zinc-950/20">
+          <div className="mb-8 rounded-2xl border border-zinc-100 bg-white p-6 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+            <Library className="mx-auto h-12 w-12 text-zinc-300 dark:text-zinc-700" />
           </div>
           <h2 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
             No content yet
           </h2>
-          <p className="mt-3 text-zinc-600 dark:text-zinc-400 max-w-sm mx-auto">
+          <p className="mx-auto mt-3 max-w-sm text-zinc-600 dark:text-zinc-400">
             Use the VideoNotes extension to save notes or bookmarks. Videos with
             content will appear here automatically.
           </p>

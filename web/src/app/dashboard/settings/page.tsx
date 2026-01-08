@@ -16,7 +16,7 @@ export default async function SettingsPage() {
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       {/* Header */}
       <header className="mb-12">
-        <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-5xl">
+        <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900 sm:text-5xl dark:text-zinc-50">
           Settings
         </h1>
         <p className="mt-2 text-lg text-zinc-600 dark:text-zinc-400">
@@ -27,9 +27,9 @@ export default async function SettingsPage() {
       {/* Settings Sections */}
       <div className="space-y-6">
         {/* Account Section */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <User className="w-5 h-5 text-indigo-500" />
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-4 flex items-center gap-3">
+            <User className="h-5 w-5 text-indigo-500" />
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
               Account
             </h2>
@@ -51,9 +51,9 @@ export default async function SettingsPage() {
         </div>
 
         {/* Billing Section */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <CreditCard className="w-5 h-5 text-indigo-500" />
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-4 flex items-center gap-3">
+            <CreditCard className="h-5 w-5 text-indigo-500" />
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
               Billing
             </h2>
@@ -61,15 +61,15 @@ export default async function SettingsPage() {
           <p className="text-zinc-600 dark:text-zinc-400">
             Upgrade to Premium for cloud sync and advanced features
           </p>
-          <button className="mt-4 px-6 py-2 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">
+          <button className="mt-4 rounded-xl bg-indigo-600 px-6 py-2 font-bold text-white transition-colors hover:bg-indigo-700">
             Upgrade Now
           </button>
         </div>
 
         {/* Preferences Section */}
-        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-zinc-200 dark:border-zinc-800 p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Bell className="w-5 h-5 text-indigo-500" />
+        <div className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-900">
+          <div className="mb-4 flex items-center gap-3">
+            <Bell className="h-5 w-5 text-indigo-500" />
             <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50">
               Preferences
             </h2>
