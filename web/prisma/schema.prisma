@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -13,64 +7,270 @@ datasource db {
   provider = "postgresql"
 }
 
-model Profile {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  fullName  String?  @map("full_name")
-  avatarUrl String?  @map("avatar_url")
-  videos    Video[]  @relation("UserVideos")
-  notes     Note[]   @relation("UserNotes")
+// -----------------------------------------------------------------------------
+// Core Identity & Billing
+// -----------------------------------------------------------------------------
 
-  @@map("profiles")
+model User {
+  id               String   @id @default(uuid()) @db.Uuid // maps to auth.users.id
+  email            String? // Optional for free users (anonymous)
+  primaryAccountId String   @map("primary_account_id") @db.Uuid
+  primaryAccount   Account  @relation("UserPrimaryAccount", fields: [primaryAccountId], references: [id])
+  createdAt        DateTime @default(now()) @map("created_at")
+  lastSeenAt       DateTime @default(now()) @map("last_seen_at")
+
+  @@map("users")
 }
 
-model Video {
-  id            String   @id @default(uuid())
-  userId        String   @map("user_id")
-  user          Profile  @relation("UserVideos", fields: [userId], references: [id])
-  youtubeId     String   @map("youtube_id")
-  title         String
-  thumbnailUrl  String?  @map("thumbnail_url")
-  bookmarkTime  Float?   @map("bookmark_time")
-  lastWatchedAt DateTime @default(now()) @map("last_watched_at")
-  notes         Note[]   @relation("VideoNotes")
+model Account {
+  id          String  @id @default(uuid()) @db.Uuid
+  displayName String? @map("display_name")
 
-  @@unique([userId, youtubeId])
-  @@map("videos")
+  // Billing & Plan
+  planId        String        @map("plan_id")
+  plan          Plan          @relation(fields: [planId], references: [id])
+  billingStatus BillingStatus @default(ACTIVE) @map("billing_status")
+  priceClass    String?       @map("price_class") // e.g. "starter_early"
+  cloudEnabled  Boolean       @default(false) @map("cloud_enabled")
+
+  // Quotas & Usage (Authoritative)
+  storageUsedBytes BigInt @default(0) @map("storage_used_bytes") @db.BigInt
+  quotaBytes       BigInt @default(0) @map("quota_bytes") @db.BigInt // Cached from Plan + Bonus
+
+  // Lifecycle
+  createdAt          DateTime  @default(now()) @map("created_at")
+  retentionExpiresAt DateTime? @map("retention_expires_at")
+  earlyBirdAppliedAt DateTime? @map("early_bird_applied_at")
+
+  // Relations
+  users          User[]          @relation("UserPrimaryAccount")
+  notes          Note[]
+  subscriptions  Subscription[]
+  usageRecords   UsageRecord[]
+  invoices       Invoice[]
+  migrationJobs  MigrationJob[]
+  paymentMethods PaymentMethod[]
+  auditLogs      AuditLog[]
+  attachments    Attachment[]
+
+  @@map("accounts")
 }
 
-model Note {
-  id        String   @id @default(uuid())
-  videoId   String   @map("video_id")
-  video     Video    @relation("VideoNotes", fields: [videoId], references: [id])
-  userId    String   @map("user_id")
-  user      Profile  @relation("UserNotes", fields: [userId], references: [id])
-  timestamp Float
-  text      String
+enum BillingStatus {
+  ACTIVE
+  PAST_DUE
+  RESTRICTED_OVERAGE
+  CANCELLED
+  ARCHIVED
+}
+
+model Plan {
+  id                 String @id // e.g. "starter", "pro"
+  displayName        String @map("display_name")
+  monthlyPriceCents  Int    @map("monthly_price_cents")
+  yearlyPriceCents   Int    @map("yearly_price_cents")
+  quotaBytes         BigInt @map("quota_bytes") @db.BigInt
+  retentionDays      Int    @map("retention_days")
+  maxImportSizeBytes BigInt @map("max_import_size_bytes") @db.BigInt
+
+  accounts Account[]
+
+  @@map("plans")
+}
+
+model Subscription {
+  id        String  @id @default(uuid()) @db.Uuid
+  accountId String  @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  providerSubscriptionId String             @unique @map("provider_subscription_id")
+  status                 SubscriptionStatus @map("status")
+  cadence                Cadence
+  priceCents             Int                @map("price_cents")
+
+  startsAt DateTime  @map("starts_at")
+  endsAt   DateTime? @map("ends_at")
+
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@map("subscriptions")
+}
+
+enum Cadence {
+  MONTHLY
+  YEARLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+  TRIALING
+  UNPAID
+}
+
+model PaymentMethod {
+  id                      String   @id @default(uuid()) @db.Uuid
+  accountId               String   @map("account_id") @db.Uuid
+  account                 Account  @relation(fields: [accountId], references: [id])
+  provider                String // "lemonsqueezy"
+  providerPaymentMethodId String   @map("provider_payment_method_id")
+  last4                   String?
+  expMonth                Int?     @map("exp_month")
+  expYear                 Int?     @map("exp_year")
+  isValid                 Boolean  @default(true) @map("is_valid")
+  createdAt               DateTime @default(now()) @map("created_at")
+
+  @@map("payment_methods")
+}
+
+enum InvoiceStatus {
+  PAID
+  OPEN
+  VOID
+  FAILED
+}
+
+model Invoice {
+  id        String  @id @default(uuid()) @db.Uuid
+  accountId String  @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  providerInvoiceId String        @unique @map("provider_invoice_id")
+  amountCents       Int           @map("amount_cents")
+  status            InvoiceStatus @map("status")
+  metadata          Json?
+  createdAt         DateTime      @default(now()) @map("created_at")
+
+  @@map("invoices")
+}
+
+// -----------------------------------------------------------------------------
+// User Data (Notes & Attachments)
+// -----------------------------------------------------------------------------
+
+model Note {
+  id        String  @id @default(uuid()) @db.Uuid
+  accountId String  @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  videoId          String  @map("video_id") // YouTube Video ID
+  videoTitle       String? @map("video_title") // Denormalized for listing
+  timestampSeconds Float   @map("timestamp_seconds")
+  content          String  @db.Text
+  metadata         Json? // Colors, tags, custom fields
+
+  // Deterministic size used for accounting & reconciliation
+  approxSizeBytes BigInt @default(0) @map("approx_size_bytes") @db.BigInt
+
+  isDeleted        Boolean  @default(false) @map("is_deleted")
+  lastModifiedAt   DateTime @default(now()) @map("last_modified_at")
+  serverModifiedAt DateTime @default(now()) @map("server_modified_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  attachments Attachment[]
+
+  @@index([accountId, videoId])
+  @@index([accountId, lastModifiedAt(sort: Desc)])
   @@map("notes")
 }
 
-model AuthHandshake {
-  id        String   @id @default(cuid())
-  code      String   @unique
-  userId    String   @map("user_id")
-  expiresAt DateTime @map("expires_at")
+model Attachment {
+  id     String @id @default(uuid()) @db.Uuid
+  noteId String @map("note_id") @db.Uuid
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade)
+
+  // Add accountId to avoid heavy joins when accounting
+  accountId String  @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  filePath  String   @map("file_path") // Storage path
+  sizeBytes BigInt   @map("size_bytes") @db.BigInt
+  mimeType  String   @map("mime_type")
   createdAt DateTime @default(now()) @map("created_at")
 
-  @@map("auth_handshakes")
+  @@index([accountId])
+  @@map("attachments")
 }
 
-model ExtensionSession {
-  id           String   @id @default(cuid())
-  userId       String   @map("user_id")
-  refreshToken String   @unique @map("refresh_token")
-  userAgent    String?  @map("user_agent")
-  expiresAt    DateTime @map("expires_at")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+// -----------------------------------------------------------------------------
+// System & Operations
+// -----------------------------------------------------------------------------
 
-  @@map("extension_sessions")
+model UsageRecord {
+  id        String  @id @default(uuid()) @db.Uuid
+  accountId String  @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  billingPeriodStart DateTime @map("billing_period_start")
+  billingPeriodEnd   DateTime @map("billing_period_end")
+
+  uploadedBytes             BigInt  @default(0) @map("uploaded_bytes") @db.BigInt
+  egressBytes               BigInt  @default(0) @map("egress_bytes") @db.BigInt
+  reportedToBillingProvider Boolean @default(false) @map("reported_to_billing_provider")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("usage_records")
+}
+
+model MigrationJob {
+  id        String  @id @default(uuid()) @db.Uuid
+  accountId String  @map("account_id") @db.Uuid
+  account   Account @relation(fields: [accountId], references: [id])
+
+  fromProfile String @map("from_profile") // "local"
+  toProfile   String @map("to_profile") // "cloud"
+
+  state         JobState  @default(PENDING)
+  cursor        Json? // Resumable cursor
+  lastHeartbeat DateTime? @map("last_heartbeat")
+
+  totalBytes     BigInt  @default(0) @map("total_bytes") @db.BigInt
+  processedBytes BigInt  @default(0) @map("processed_bytes") @db.BigInt
+  errorMessage   String? @map("error_message")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([accountId])
+  @@map("migration_jobs")
+}
+
+enum JobState {
+  PENDING
+  RUNNING
+  PAUSED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model IdempotencyKey {
+  key          String    @id
+  method       String
+  path         String
+  responseCode Int       @map("response_code")
+  responseBody Json?     @map("response_body") // Use JSON for easy consumption
+  expiresAt    DateTime? @map("expires_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  @@map("idempotency_keys")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  actorId   String?  @map("actor_id") // Could be user_id or NULL for system
+  accountId String?  @map("account_id") @db.Uuid
+  account   Account? @relation(fields: [accountId], references: [id])
+
+  action         String
+  details        Json?
+  clientVersion  String? @map("client_version")
+  clientPlatform String? @map("client_platform")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("audit_logs")
 }
