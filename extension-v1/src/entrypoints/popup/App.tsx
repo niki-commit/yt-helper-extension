@@ -12,10 +12,16 @@ import {
   Monitor,
 } from "lucide-react";
 import { useTheme, type Theme } from "@/hooks/useTheme";
+import { useHideRecommendations } from "@/hooks/useHideRecommendations";
+import { useHideComments } from "@/hooks/useHideComments";
+import { useAutoPause } from "@/hooks/useAutoPause";
+import { useAutoResume } from "@/hooks/useAutoResume";
 
 function App() {
-  const { isEnabled, setIsEnabled } = useFocusMode();
-  const { isAutoPauseEnabled, setIsAutoPauseEnabled } = useAutoPause();
+  const hideRecommendations = useHideRecommendations();
+  const hideComments = useHideComments();
+  const autoPause = useAutoPause();
+  const autoResume = useAutoResume();
   const { theme, setTheme } = useTheme();
 
   return (
@@ -82,36 +88,91 @@ function App() {
           value="settings"
           className="flex-1 space-y-4 overflow-auto p-4"
         >
-          <div className="border-border bg-card flex items-center justify-between rounded-lg border p-4 shadow-sm">
+          {/* Focus Mode Section */}
+          <div className="border-border bg-card space-y-3 rounded-lg border p-4 shadow-sm">
             <div className="space-y-0.5">
-              <Label htmlFor="focus-mode" className="text-base font-medium">
-                Focus Mode
-              </Label>
+              <Label className="text-base font-medium">Focus Mode</Label>
               <p className="text-muted-foreground text-xs">
-                Hide distractions on YouTube
+                Control distractions on YouTube
               </p>
             </div>
-            <Switch
-              id="focus-mode"
-              checked={isEnabled}
-              onCheckedChange={setIsEnabled}
-            />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label
+                  htmlFor="hide-recommendations"
+                  className="text-sm font-medium"
+                >
+                  Hide Recommendations
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Hide sidebar suggestions
+                </p>
+              </div>
+              <Switch
+                id="hide-recommendations"
+                checked={hideRecommendations.isEnabled}
+                onCheckedChange={hideRecommendations.setIsEnabled}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="hide-comments" className="text-sm font-medium">
+                  Hide Comments
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Hide comment section
+                </p>
+              </div>
+              <Switch
+                id="hide-comments"
+                checked={hideComments.isEnabled}
+                onCheckedChange={hideComments.setIsEnabled}
+              />
+            </div>
           </div>
 
-          <div className="border-border bg-card flex items-center justify-between rounded-lg border p-4 shadow-sm">
+          {/* Auto-Pause Section */}
+          <div className="border-border bg-card space-y-3 rounded-lg border p-4 shadow-sm">
             <div className="space-y-0.5">
-              <Label htmlFor="auto-pause" className="text-base font-medium">
-                Auto-Pause
-              </Label>
+              <Label className="text-base font-medium">Video Playback</Label>
               <p className="text-muted-foreground text-xs">
-                Pause video when typing
+                Control auto-pause behavior
               </p>
             </div>
-            <Switch
-              id="auto-pause"
-              checked={isAutoPauseEnabled}
-              onCheckedChange={setIsAutoPauseEnabled}
-            />
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-pause" className="text-sm font-medium">
+                  Auto-Pause on Switch
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Pause when switching tabs
+                </p>
+              </div>
+              <Switch
+                id="auto-pause"
+                checked={autoPause.isAutoPauseEnabled}
+                onCheckedChange={autoPause.setIsAutoPauseEnabled}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <Label htmlFor="auto-resume" className="text-sm font-medium">
+                  Auto-Resume on Return
+                </Label>
+                <p className="text-muted-foreground text-xs">
+                  Resume when returning to tab
+                </p>
+              </div>
+              <Switch
+                id="auto-resume"
+                checked={autoResume.isEnabled}
+                onCheckedChange={autoResume.setIsEnabled}
+              />
+            </div>
           </div>
 
           <div className="border-border bg-card flex flex-col rounded-lg border p-4 shadow-sm">

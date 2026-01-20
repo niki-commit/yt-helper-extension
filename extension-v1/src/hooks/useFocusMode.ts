@@ -42,23 +42,9 @@ export function useFocusMode() {
     return () => browser.storage.onChanged.removeListener(handleStorageChange);
   }, []);
 
-  // Apply CSS when enabled
+  // Removed DOM side-effects. Handled by initFocusMode in content script.
   useEffect(() => {
-    if (!isEnabled) {
-      const existingStyle = document.getElementById("vn-focus-mode");
-      if (existingStyle) existingStyle.remove();
-      return;
-    }
-
-    const style = document.createElement("style");
-    style.id = "vn-focus-mode";
-    style.textContent = NO_DISTRACTION_CSS;
-    document.head.appendChild(style);
-
-    return () => {
-      const existingStyle = document.getElementById("vn-focus-mode");
-      if (existingStyle) existingStyle.remove();
-    };
+    // This hook now only manages the 'isEnabled' state for UI syncing.
   }, [isEnabled]);
 
   const setFocusMode = (value: boolean) => {

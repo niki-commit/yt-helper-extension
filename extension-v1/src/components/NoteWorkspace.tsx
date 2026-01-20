@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Clock } from "lucide-react";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAdState } from "@/hooks/useAdState";
+import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 
 interface NoteWorkspaceProps {
   initialTimestamp?: number | null;
@@ -15,27 +16,38 @@ export function NoteWorkspace({
 }: NoteWorkspaceProps) {
   const { isAutoPauseEnabled, handleFocus, handleBlur } = useAutoPause();
   const [editorContent, setEditorContent] = useState("");
+  const [noteTimestamp, setNoteTimestamp] = useState<number | null>(
+    initialTimestamp ?? null
+  );
+  const { getCurrentTime } = useYouTubePlayer();
+  const { isAdActive } = useAdState();
 
   // Format Helper: Seconds to MM:SS
   const formatTime = (seconds: number) => {
     const min = Math.floor(seconds / 60);
     const sec = Math.floor(seconds % 60);
-    return `[${min}:${sec.toString().padStart(2, "0")}] `;
+    return `${min}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Auto-populate timestamp when it changes
+  // Update timestamp when initialTimestamp changes
   useEffect(() => {
     if (initialTimestamp !== null && initialTimestamp !== undefined) {
-      const timeStr = formatTime(initialTimestamp);
-      setEditorContent(timeStr);
+      setNoteTimestamp(initialTimestamp);
     }
   }, [initialTimestamp]);
 
-  const { isAdActive } = useAdState();
+  const handleCaptureTimestamp = () => {
+    if (isAdActive) return;
+    const currentTime = getCurrentTime();
+    setNoteTimestamp(currentTime);
+  };
 
   const handleSaveAndResume = () => {
     if (isAdActive) return;
-    console.log("[VideoNotes] Saving note:", editorContent);
+    console.log("[VideoNotes] Saving note:", {
+      timestamp: noteTimestamp,
+      content: editorContent,
+    });
     // TODO: Phase 3 Dexie Save
 
     // Notify content script to resume video
@@ -52,6 +64,48 @@ export function NoteWorkspace({
     >
       {/* Editor Area */}
       <div className="space-y-4">
+        {/* Timestamp Badge */}
+        <div className="flex items-center justify-between gap-2">
+          {noteTimestamp !== null ? (
+            <div className="bg-primary/10 text-primary border-primary/20 flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium">
+              <Clock className="h-3.5 w-3.5" />
+              <span>{formatTime(noteTimestamp)}</span>
+              <button
+                onClick={() => setNoteTimestamp(null)}
+                className="hover:bg-primary/20 ml-1 rounded-full p-0.5 transition-colors"
+                title="Clear Timestamp"
+              >
+                <Plus className="h-3.5 w-3.5 rotate-45" />
+              </button>
+            </div>
+          ) : (
+            <div className="bg-muted/50 text-muted-foreground flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm">
+              <span>General Note</span>
+            </div>
+          )}
+
+          {/* Capture Button (only show if no timestamp) */}
+          {noteTimestamp === null && (
+            <button
+              onClick={handleCaptureTimestamp}
+              disabled={isAdActive}
+              className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95 ${
+                isAdActive
+                  ? "cursor-not-allowed border-gray-300 opacity-50"
+                  : "hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
+              }`}
+              title={
+                isAdActive
+                  ? "Cannot capture time during ads"
+                  : "Capture Current Time"
+              }
+            >
+              <Clock className="h-3.5 w-3.5" />
+              <span>Stamp</span>
+            </button>
+          )}
+        </div>
+
         <div className="space-y-2">
           <RichTextEditor
             content={editorContent}

@@ -8,17 +8,16 @@ export function useAutoPause() {
 
   // Load initial state
   useEffect(() => {
-    browser.storage.local.get("autoPause").then((res) => {
-      // Default to true if not set
-      setIsEnabled((res.autoPause as boolean) ?? true);
+    browser.storage.local.get("autoPauseEnabled").then((res) => {
+      setIsEnabled(res.autoPauseEnabled !== false);
     });
   }, []);
 
   // Sync with storage changes
   useEffect(() => {
     const handleStorageChange = (changes: any, areaName: string) => {
-      if (areaName === "local" && changes.autoPause) {
-        setIsEnabled(changes.autoPause.newValue);
+      if (areaName === "local" && changes.autoPauseEnabled) {
+        setIsEnabled(changes.autoPauseEnabled.newValue !== false);
       }
     };
 
@@ -28,8 +27,10 @@ export function useAutoPause() {
 
   const setIsEnabled = (value: boolean) => {
     setIsAutoPauseEnabled(value);
-    browser.storage.local.set({ autoPause: value });
+    browser.storage.local.set({ autoPauseEnabled: value });
   };
+
+  // Note: Tab/Window visibility auto-pause is now handled globally in content.tsx via initAutoPause()
 
   const handleFocus = () => {
     if (isAutoPauseEnabled) {

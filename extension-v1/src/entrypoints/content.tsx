@@ -3,6 +3,7 @@ import { browser } from "wxt/browser";
 import { SidebarApp } from "@/components/SidebarApp";
 import { FloatingApp } from "@/components/FloatingApp";
 import { ChipApp } from "@/components/ChipApp";
+import { initFocusMode, initAutoPause } from "@/lib/settings";
 import "@/assets/tailwind.css";
 
 export default defineContentScript({
@@ -12,12 +13,17 @@ export default defineContentScript({
   async main(ctx) {
     console.log("[VideoNotes] Content script loaded (SPA Mode)");
 
+    // Initialize Global Settings Logic
+    initFocusMode();
+    initAutoPause();
+
     // Define UI Type Helper
     type UiInstance = Awaited<ReturnType<typeof createShadowRootUi>>;
 
     // --- State & Mounting Logic ---
     let uiState: {
-      sidebar?: UiInstance;
+      sidebarDesktop?: UiInstance;
+      sidebarMobile?: UiInstance;
       floating?: UiInstance;
       chipOwner?: UiInstance;
       chipPlayer?: UiInstance;
@@ -30,17 +36,56 @@ export default defineContentScript({
     };
 
     // Helper: Component Definitions
-    // 1. Sidebar UI
-    const createSidebarUi = async () =>
+    // 1a. Desktop Sidebar UI (right side on desktop)
+    const createSidebarDesktopUi = async () =>
       createShadowRootUi(ctx, {
-        name: "vn-sidebar",
+        name: "vn-sidebar-desktop",
         position: "inline",
         anchor: "#secondary",
         append: "first",
         onMount: (container: HTMLElement) => {
-          container.style.display = "block";
           container.style.backgroundColor = "transparent";
           container.style.marginBottom = "10px";
+
+          // Encapsulated Responsive Style
+          const styleSheet = document.createElement("style");
+          styleSheet.textContent = `
+            :host { display: block !important; }
+            @media (max-width: 999px) {
+              :host { display: none !important; }
+            }
+          `;
+          container.appendChild(styleSheet);
+
+          const root = ReactDOM.createRoot(container);
+          root.render(<SidebarApp />);
+          return root;
+        },
+        onRemove: (root: Root | undefined) => root?.unmount(),
+      });
+
+    // 1b. Mobile Sidebar UI (below description on mobile)
+    const createSidebarMobileUi = async () =>
+      createShadowRootUi(ctx, {
+        name: "vn-sidebar-mobile",
+        position: "inline",
+        anchor: "ytd-watch-metadata",
+        append: "after",
+        onMount: (container: HTMLElement) => {
+          container.style.backgroundColor = "transparent";
+          container.style.marginTop = "16px";
+          container.style.marginBottom = "16px";
+
+          // Encapsulated Responsive Style
+          const styleSheet = document.createElement("style");
+          styleSheet.textContent = `
+            :host { display: block !important; }
+            @media (min-width: 1000px) {
+              :host { display: none !important; }
+            }
+          `;
+          container.appendChild(styleSheet);
+
           const root = ReactDOM.createRoot(container);
           root.render(<SidebarApp />);
           return root;
@@ -114,7 +159,8 @@ export default defineContentScript({
       if (!uiState.isMounted) return;
       console.log("[VideoNotes] Unmounting all UI.");
 
-      uiState.sidebar?.remove();
+      uiState.sidebarDesktop?.remove();
+      uiState.sidebarMobile?.remove();
       uiState.floating?.remove();
       uiState.chipOwner?.remove();
       uiState.chipPlayer?.remove();
@@ -141,11 +187,16 @@ export default defineContentScript({
 
       // Cleanup any stale elements manually (prevents dupes)
       document
-        .querySelectorAll("vn-sidebar, vn-floating, vn-chip, vn-player-chip")
+        .querySelectorAll(
+          "vn-sidebar-desktop, vn-sidebar-mobile, vn-floating, vn-chip, vn-player-chip"
+        )
         .forEach((el) => el.remove());
 
       // Initialize UI instances if needed
-      if (!uiState.sidebar) uiState.sidebar = await createSidebarUi();
+      if (!uiState.sidebarDesktop)
+        uiState.sidebarDesktop = await createSidebarDesktopUi();
+      if (!uiState.sidebarMobile)
+        uiState.sidebarMobile = await createSidebarMobileUi();
       if (!uiState.floating) uiState.floating = await createFloatingUi();
       if (!uiState.chipOwner) uiState.chipOwner = await createChipOwnerUi();
       if (!uiState.chipPlayer) uiState.chipPlayer = await createChipPlayerUi();
@@ -166,10 +217,15 @@ export default defineContentScript({
         ) {
           uiState.chipPlayer?.mount();
         }
-        // Sidebar (Check for secondary column)
+        // Desktop Sidebar (Check for secondary column)
         const secondary = document.querySelector("#secondary");
-        if (secondary && !document.querySelector("vn-sidebar")) {
-          uiState.sidebar?.mount();
+        if (secondary && !document.querySelector("vn-sidebar-desktop")) {
+          uiState.sidebarDesktop?.mount();
+        }
+        // Mobile Sidebar (Check for metadata section)
+        const metadata = document.querySelector("ytd-watch-metadata");
+        if (metadata && !document.querySelector("vn-sidebar-mobile")) {
+          uiState.sidebarMobile?.mount();
         }
 
         // Always mount floating (once)
@@ -236,9 +292,18 @@ export default defineContentScript({
         return;
       }
 
-      // Otherwise check if Sidebar is available
-      const sidebarMounted = document.querySelector("vn-sidebar");
-      if (sidebarMounted) {
+      // Otherwise check if either Sidebar variant is visible
+      const desktopSidebar = document.querySelector("vn-sidebar-desktop");
+      const mobileSidebar = document.querySelector("vn-sidebar-mobile");
+
+      const isDesktopVisible =
+        desktopSidebar &&
+        window.getComputedStyle(desktopSidebar).display !== "none";
+      const isMobileVisible =
+        mobileSidebar &&
+        window.getComputedStyle(mobileSidebar).display !== "none";
+
+      if (isDesktopVisible || isMobileVisible) {
         window.dispatchEvent(new CustomEvent("VN_OPEN_SIDEBAR", eventDetail));
       } else {
         window.dispatchEvent(new CustomEvent("VN_OPEN_FLOATING", eventDetail));
@@ -262,7 +327,9 @@ export default defineContentScript({
       const cameFromExtension = path.some(
         (node) =>
           node instanceof HTMLElement &&
-          (node.tagName === "VN-SIDEBAR" || node.tagName === "VN-FLOATING")
+          (node.tagName === "VN-SIDEBAR-DESKTOP" ||
+            node.tagName === "VN-SIDEBAR-MOBILE" ||
+            node.tagName === "VN-FLOATING")
       );
 
       if (cameFromExtension) {
