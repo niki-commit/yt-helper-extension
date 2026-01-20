@@ -5,6 +5,8 @@ import { Icon } from "@iconify/react";
 interface RichTextEditorProps {
   content: string;
   onChange: (content: string) => void;
+  onFocus?: () => void; // New prop
+  onBlur?: () => void; // New prop
   placeholder?: string;
   editable?: boolean;
 }
@@ -12,19 +14,24 @@ interface RichTextEditorProps {
 export function RichTextEditor({
   content,
   onChange,
+  onFocus,
+  onBlur,
   placeholder = "Start typing...",
   editable = true,
 }: RichTextEditorProps) {
   const editor = useEditor({
-    extensions: [StarterKit],
+    extensions: [StarterKit], // We'll add placeholder ext later
     content,
     editable,
     onUpdate: ({ editor }) => {
       onChange(editor.getHTML());
     },
+    onFocus: () => onFocus?.(), // Forward event
+    onBlur: () => onBlur?.(), // Forward event
     editorProps: {
       attributes: {
-        class: "prose prose-sm max-w-none focus:outline-none min-h-[200px] p-4",
+        class:
+          "prose prose-sm max-w-none focus:outline-none min-h-[200px] p-4 text-zinc-900 dark:text-zinc-100", // Added text color
       },
     },
   });

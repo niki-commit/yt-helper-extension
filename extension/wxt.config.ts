@@ -1,5 +1,4 @@
 import { defineConfig } from "wxt";
-import tailwindcss from "@tailwindcss/vite";
 
 // See https://wxt.dev/api/config.html
 export default defineConfig({
@@ -16,16 +15,14 @@ export default defineConfig({
     ],
   },
   vite: () => ({
-    plugins: [tailwindcss()],
     build: {
       sourcemap: false,
-      minify: "terser", // Use terser instead of esbuild to avoid UTF-8 encoding issues
+      minify: "terser",
       target: "esnext",
-      cssCodeSplit: false,
       terserOptions: {
         format: {
           comments: false,
-          ascii_only: true, // Ensure ASCII-only output to avoid encoding issues
+          ascii_only: true,
         },
       },
     },

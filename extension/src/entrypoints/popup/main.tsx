@@ -1,10 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import "@/styles/globals.css";
+import "../../styles/app.css";
 
 function App() {
   return (
-    <div className="bg-background text-foreground flex h-[500px] w-[400px] flex-col gap-4 p-4">
+    <div className="flex h-[500px] w-[400px] flex-col gap-4 bg-background p-4 text-foreground">
       <h1 className="text-xl font-bold">VideoNotes</h1>
       <p className="text-muted-foreground">Extension Ready.</p>
     </div>
