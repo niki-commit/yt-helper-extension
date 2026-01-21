@@ -6,16 +6,18 @@ export class VideoNotesDB extends Dexie {
   videos!: Table<VideoMetadata>;
   folders!: Table<Folder>;
   settings!: Table<{ id: string; value: any }>;
+  bookmarks!: Table<{ videoId: string; timestamp: number; createdAt: number }>;
 
   constructor() {
     super("VideoNotesDB");
 
-    this.version(2).stores({
+    this.version(3).stores({
       // Primary keys and indexes
       notes: "id, video_id, folder_id, last_modified_at, is_dirty, is_deleted",
       videos: "id, last_opened_at",
       folders: "id, parent_id",
       settings: "id",
+      bookmarks: "videoId",
     });
   }
 }

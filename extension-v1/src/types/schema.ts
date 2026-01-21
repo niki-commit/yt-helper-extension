@@ -52,3 +52,11 @@ export const SettingsSchema = z.object({
 });
 
 export type Settings = z.infer<typeof SettingsSchema>;
+
+export const BookmarkSchema = z.object({
+  videoId: z.string(), // YouTube video ID (unique per bookmark record)
+  timestamp: z.number(), // In seconds
+  createdAt: z.number(), // Unix timestamp (ms)
+});
+
+export type Bookmark = z.infer<typeof BookmarkSchema>;

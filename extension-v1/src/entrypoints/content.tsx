@@ -130,7 +130,11 @@ export default defineContentScript({
           container.style.backgroundColor = "transparent";
           container.style.display = "contents";
           const root = ReactDOM.createRoot(container);
-          root.render(<ChipApp />);
+          root.render(
+            <Providers>
+              <ChipApp />
+            </Providers>
+          );
           return root;
         },
         onRemove: (root: Root | undefined) => root?.unmount(),
@@ -147,7 +151,11 @@ export default defineContentScript({
           container.style.display = "contents";
           container.style.backgroundColor = "transparent";
           const root = ReactDOM.createRoot(container);
-          root.render(<ChipApp isPlayerControl={true} />);
+          root.render(
+            <Providers>
+              <ChipApp isPlayerControl={true} />
+            </Providers>
+          );
           return root;
         },
         onRemove: (root: Root | undefined) => root?.unmount(),

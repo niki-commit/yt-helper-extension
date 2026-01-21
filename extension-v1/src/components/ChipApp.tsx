@@ -10,6 +10,7 @@ import {
 import { useTheme } from "@/hooks/useTheme";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import { useAdState } from "@/hooks/useAdState";
+import { useBookmarks } from "@/hooks/useBookmarks";
 
 interface ChipAppProps {
   isPlayerControl?: boolean;
@@ -17,11 +18,20 @@ interface ChipAppProps {
 
 export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
   const [isSaved, setIsSaved] = useState(false);
-  const [hasBookmark, setHasBookmark] = useState(true); // Demo state
-  const [resumeTimestamp, setResumeTimestamp] = useState("12:45"); // Demo state
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { resolvedTheme } = useTheme();
-  const { getCurrentTime } = useYouTubePlayer();
+  const { getCurrentTime, seekTo, play } = useYouTubePlayer();
+
+  // Get current video ID
+  const videoId = new URLSearchParams(window.location.search).get("v");
+
+  // Real Bookmark Logic
+  const {
+    bookmark,
+    saveBookmark,
+    deleteBookmark,
+    isSaving: isBookmarkSaving,
+  } = useBookmarks(videoId);
 
   useEffect(() => {
     if (!isPlayerControl) return;
@@ -43,7 +53,6 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
 
   const handleOpenWorkspace = () => {
     if (isAdActive) return;
-    console.log(`[VideoNotes] Opening Workspace (Manual)`);
 
     window.dispatchEvent(
       new CustomEvent("VN_REQUEST_OPEN", {
@@ -60,7 +69,6 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
   const handleOpenOverlay = () => {
     if (isAdActive) return;
     const currentTime = getCurrentTime();
-    console.log(`[VideoNotes] Chip Clicked! Capturing time: ${currentTime}`);
 
     window.dispatchEvent(
       new CustomEvent("VN_REQUEST_OPEN", {
@@ -74,13 +82,43 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
     );
   };
 
-  const handleQuickSave = () => {
-    if (isAdActive) return;
+  const handleQuickSave = async () => {
+    if (isAdActive || isBookmarkSaving) return;
+
+    const currentTime = getCurrentTime();
     setIsSaved(true);
-    // TODO: Phase 3 Dexie Save Logic
+
+    try {
+      await saveBookmark(currentTime);
+    } catch (err) {
+      console.error("[VideoNotes] Failed to save bookmark:", err);
+    }
+
     setTimeout(() => {
       setIsSaved(false);
     }, 2000);
+  };
+
+  const handleResume = () => {
+    if (isAdActive || !bookmark) return;
+    seekTo(bookmark.timestamp);
+    play();
+  };
+
+  const handleDeleteBookmark = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      await deleteBookmark();
+    } catch (err) {
+      console.error("[VideoNotes] Failed to delete bookmark:", err);
+    }
+  };
+
+  // Format Helper: Seconds to MM:SS
+  const formatTime = (seconds: number) => {
+    const min = Math.floor(seconds / 60);
+    const sec = Math.floor(seconds % 60);
+    return `${min}:${sec.toString().padStart(2, "0")}`;
   };
 
   // Only show in player controls if fullscreen is active
@@ -123,11 +161,11 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
       </button>
 
       {/* 2. RESUME SPLIT-BUTTON (Conditional) */}
-      {hasBookmark && (
+      {bookmark && (
         <div className="group flex items-center rounded-full shadow-sm backdrop-blur-md transition-all active:scale-95">
           {/* Resume Part */}
           <button
-            onClick={() => console.log("Resume clicked")} // TODO: Phase 3 Logic
+            onClick={handleResume}
             disabled={isAdActive}
             className={`border-border bg-card/80 flex h-9 items-center gap-2 rounded-l-full border border-r-0 px-4 text-sm font-medium transition-all ${
               isAdActive
@@ -137,22 +175,21 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
             title={
               isAdActive
                 ? "Cannot resume during ads"
-                : `Resume @ ${resumeTimestamp}`
+                : `Resume @ ${formatTime(bookmark.timestamp)}`
             }
           >
             <PlayCircle className="text-secondary-foreground h-4 w-4 dark:text-amber-400" />
             <span className="text-muted-foreground text-xs whitespace-nowrap">
-              {isAdActive ? "Ad Active" : `Resume @ ${resumeTimestamp}`}
+              {isAdActive
+                ? "Ad Active"
+                : `Resume @ ${formatTime(bookmark.timestamp)}`}
             </span>
           </button>
 
           {/* Delete Part */}
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setHasBookmark(false); // Demo Logic
-            }}
-            // NOT disabled by ad
+            onClick={handleDeleteBookmark}
+            disabled={isAdActive}
             className="border-border bg-card/80 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive text-muted-foreground flex h-9 w-8 items-center justify-center rounded-r-full border border-l transition-all hover:cursor-pointer"
             title="Delete Bookmark"
           >
