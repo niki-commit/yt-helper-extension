@@ -11,6 +11,7 @@ interface RichTextEditorProps {
   onBlur?: () => void;
   placeholder?: string;
   editable?: boolean;
+  autofocus?: boolean | "start" | "end" | "all";
 }
 
 export function RichTextEditor({
@@ -20,6 +21,7 @@ export function RichTextEditor({
   onBlur,
   placeholder = "Start typing...",
   editable = true,
+  autofocus = false,
 }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
@@ -42,6 +44,20 @@ export function RichTextEditor({
       },
     },
   });
+
+  // Expose editor instance to parent if needed via useEffect or just let parent use its own logic
+  // For now, we'll keep it simple and just sync content.
+
+  // Controlled Autofocus: Only trigger if the prop is truthy
+  useEffect(() => {
+    if (editor && autofocus) {
+      console.log(
+        "[VideoNotes] Explicitly focusing editor due to autofocus prop:",
+        autofocus
+      );
+      editor.commands.focus(autofocus === true ? "end" : autofocus);
+    }
+  }, [editor, autofocus]);
 
   // Keep editor in sync with content prop (for auto-timestamps)
   useEffect(() => {

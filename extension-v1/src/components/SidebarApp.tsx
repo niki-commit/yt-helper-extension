@@ -5,14 +5,18 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { FileEdit } from "lucide-react";
 import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { useTheme } from "@/hooks/useTheme";
+import { Providers } from "@/components/Providers";
+import { useVideoMetadataSync } from "@/hooks/useVideoMetadataSync";
 
-export function SidebarApp() {
+export function SidebarAppContent() {
   const [value, setValue] = useState<string>("");
   const [initialTimestamp, setInitialTimestamp] = useState<number | null>(null);
   const { resolvedTheme } = useTheme();
+
+  // Sync Video Metadata to DB
+  useVideoMetadataSync();
 
   useEffect(() => {
     const handleOpen = (e: any) => {
@@ -33,7 +37,14 @@ export function SidebarApp() {
         type="single"
         collapsible
         value={value}
-        onValueChange={setValue}
+        onValueChange={(newValue) => {
+          setValue(newValue);
+          // If we are collapsing (newValue is empty), clear the stale initialTimestamp
+          // so that the next manual open starts fresh.
+          if (!newValue) {
+            setInitialTimestamp(null);
+          }
+        }}
         className="w-full"
       >
         <AccordionItem value="item-1" className="border-none">
@@ -49,7 +60,7 @@ export function SidebarApp() {
               <NoteWorkspace
                 initialTimestamp={initialTimestamp}
                 onSaveComplete={() => {
-                  setValue(""); // Collapse
+                  // Keep sidebar open after save for continuous note taking
                   setInitialTimestamp(null);
                 }}
               />
@@ -58,5 +69,13 @@ export function SidebarApp() {
         </AccordionItem>
       </Accordion>
     </div>
+  );
+}
+
+export function SidebarApp() {
+  return (
+    <Providers>
+      <SidebarAppContent />
+    </Providers>
   );
 }

@@ -277,11 +277,9 @@ export default defineContentScript({
         return;
       }
 
-      // 1. Auto-Pause
-      const video = document.querySelector(
-        "video.html5-main-video"
-      ) as HTMLVideoElement;
-      if (video) video.pause();
+      // 1. Auto-Pause (REMOVED - Now handled by editor focus in NoteWorkspace)
+      // const video = document.querySelector("video.html5-main-video") as HTMLVideoElement;
+      // if (video) video.pause();
 
       const eventDetail = { detail: e.detail };
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { X } from "lucide-react";
 import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { useTheme } from "@/hooks/useTheme";
+import { Providers } from "@/components/Providers";
 
 export function FloatingApp() {
   const [isOpen, setIsOpen] = useState(false);
@@ -119,47 +120,55 @@ export function FloatingApp() {
   if (!isOpen) return null;
 
   return (
-    <div
-      style={{
-        transform: `translate(${position.x}px, ${position.y}px)`,
-        width: `${size.width}px`,
-        height: `${size.height}px`,
-        position: "fixed",
-        top: 0,
-        left: 0,
-      }}
-      className={`border-border bg-background/40 animate-in fade-in slide-in-from-right-4 pointer-events-auto z-99999 flex flex-col rounded-2xl border p-4 shadow-2xl backdrop-blur-xl transition-[background-color,border-color,opacity,transform] duration-300 ${resolvedTheme === "dark" ? "dark" : ""}`}
-    >
-      {/* Header / Drag Handle */}
+    <Providers>
       <div
-        onMouseDown={handleDragStart}
-        className="border-border/20 mb-4 flex cursor-move items-center justify-between border-b pb-4 select-none"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          width: `${size.width}px`,
+          height: `${size.height}px`,
+          position: "fixed",
+          top: 0,
+          left: 0,
+        }}
+        className={`border-border bg-background/40 animate-in fade-in slide-in-from-right-4 pointer-events-auto z-99999 flex flex-col rounded-2xl border p-4 shadow-2xl backdrop-blur-xl transition-[background-color,border-color,opacity,transform] duration-300 ${resolvedTheme === "dark" ? "dark" : ""}`}
       >
-        <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
-          VideoNotes
-        </h1>
-        <button
-          onClick={() => setIsOpen(false)}
-          className="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-full p-1 transition-colors"
+        {/* Header / Drag Handle */}
+        <div
+          onMouseDown={handleDragStart}
+          className="border-border/20 mb-4 flex cursor-move items-center justify-between border-b pb-4 select-none"
         >
-          <X className="h-5 w-5" />
-        </button>
-      </div>
+          <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
+            VideoNotes
+          </h1>
+          <button
+            onClick={() => {
+              setIsOpen(false);
+              setInitialTimestamp(null);
+            }}
+            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-full p-1 transition-colors"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
 
-      {/* Workspace */}
-      <NoteWorkspace
-        initialTimestamp={initialTimestamp}
-        onSaveComplete={() => setIsOpen(false)}
-      />
+        {/* Workspace */}
+        <NoteWorkspace
+          initialTimestamp={initialTimestamp}
+          onSaveComplete={() => {
+            // Keep floating UI open after save for continuous note taking
+            setInitialTimestamp(null);
+          }}
+        />
 
-      {/* Resize Handle */}
-      <div
-        onMouseDown={handleResizeStart}
-        className="absolute right-0 bottom-0 h-6 w-6 cursor-nwse-resize rounded-br-2xl transition-colors hover:bg-white/10"
-        title="Resize"
-      >
-        <div className="border-muted-foreground absolute right-1 bottom-1 h-3 w-3 border-r-2 border-b-2 opacity-50" />
+        {/* Resize Handle */}
+        <div
+          onMouseDown={handleResizeStart}
+          className="absolute right-0 bottom-0 h-6 w-6 cursor-nwse-resize rounded-br-2xl transition-colors hover:bg-white/10"
+          title="Resize"
+        >
+          <div className="border-muted-foreground absolute right-1 bottom-1 h-3 w-3 border-r-2 border-b-2 opacity-50" />
+        </div>
       </div>
-    </div>
+    </Providers>
   );
 }

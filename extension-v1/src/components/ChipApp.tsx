@@ -5,6 +5,7 @@ import {
   Bookmark,
   Check,
   CheckCircle2,
+  Layout,
 } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
@@ -40,6 +41,22 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
 
   const { isAdActive } = useAdState();
 
+  const handleOpenWorkspace = () => {
+    if (isAdActive) return;
+    console.log(`[VideoNotes] Opening Workspace (Manual)`);
+
+    window.dispatchEvent(
+      new CustomEvent("VN_REQUEST_OPEN", {
+        bubbles: true,
+        composed: true,
+        detail: {
+          timestamp: Date.now(),
+          currentTime: null, // General mode: No timestamp, no pause
+        },
+      })
+    );
+  };
+
   const handleOpenOverlay = () => {
     if (isAdActive) return;
     const currentTime = getCurrentTime();
@@ -73,17 +90,33 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
     <div
       className={`${
         isPlayerControl ? "ml-0 h-12 items-start pt-[9px]" : "ml-4 items-center"
-      } ${
-        resolvedTheme === "dark" ? "dark" : ""
-      } flex flex-nowrap gap-2 overflow-hidden bg-transparent font-sans whitespace-nowrap ${
-        isAdActive ? "pointer-events-none opacity-50 grayscale" : ""
-      }`}
+      } ${resolvedTheme === "dark" ? "dark" : ""} ${
+        isAdActive ? "grayscale" : ""
+      } flex flex-nowrap gap-2 overflow-hidden bg-transparent font-sans whitespace-nowrap`}
     >
+      {/* 0. WORKSPACE TOGGLE (Manual Open) */}
+      <button
+        onClick={handleOpenWorkspace}
+        disabled={isAdActive}
+        className={`border-border bg-card/80 flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all active:scale-95 ${
+          isAdActive
+            ? "cursor-not-allowed opacity-50"
+            : "hover:bg-accent/50 hover:border-primary/50 hover:cursor-pointer"
+        }`}
+        title={isAdActive ? "Disabled during ads" : "Open Workspace (Manual)"}
+      >
+        <Layout className="text-primary h-4 w-4 transition-colors" />
+      </button>
+
       {/* 1. NOTE BUTTON */}
       <button
         onClick={handleOpenOverlay}
         disabled={isAdActive}
-        className="group border-border bg-card/80 text-foreground hover:border-primary/50 hover:bg-accent/50 flex h-9 items-center gap-2 rounded-full border px-4 text-sm font-medium shadow-sm backdrop-blur-md transition-all hover:cursor-pointer active:scale-95"
+        className={`group border-border bg-card/80 text-foreground flex h-9 items-center gap-2 rounded-full border px-4 text-sm font-medium shadow-sm backdrop-blur-md transition-all active:scale-95 ${
+          isAdActive
+            ? "cursor-not-allowed opacity-50"
+            : "hover:border-primary/50 hover:bg-accent/50 hover:cursor-pointer"
+        }`}
       >
         <FileEdit className="text-primary h-4 w-4 transition-colors dark:text-cyan-400" />
         <span>{isAdActive ? "Ad Active" : "Note"}</span>
@@ -96,12 +129,20 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
           <button
             onClick={() => console.log("Resume clicked")} // TODO: Phase 3 Logic
             disabled={isAdActive}
-            className="border-border bg-card/80 hover:bg-accent/50 hover:border-secondary/50 flex h-9 items-center gap-2 rounded-l-full border border-r-0 px-4 text-sm font-medium transition-all hover:cursor-pointer"
-            title={`Resume @ ${resumeTimestamp}`}
+            className={`border-border bg-card/80 flex h-9 items-center gap-2 rounded-l-full border border-r-0 px-4 text-sm font-medium transition-all ${
+              isAdActive
+                ? "cursor-not-allowed opacity-50"
+                : "hover:bg-accent/50 hover:border-secondary/50 hover:cursor-pointer"
+            }`}
+            title={
+              isAdActive
+                ? "Cannot resume during ads"
+                : `Resume @ ${resumeTimestamp}`
+            }
           >
             <PlayCircle className="text-secondary-foreground h-4 w-4 dark:text-amber-400" />
             <span className="text-muted-foreground text-xs whitespace-nowrap">
-              Resume @ {resumeTimestamp}
+              {isAdActive ? "Ad Active" : `Resume @ ${resumeTimestamp}`}
             </span>
           </button>
 
@@ -111,7 +152,7 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
               e.stopPropagation();
               setHasBookmark(false); // Demo Logic
             }}
-            disabled={isAdActive}
+            // NOT disabled by ad
             className="border-border bg-card/80 hover:bg-destructive/10 hover:border-destructive/50 hover:text-destructive text-muted-foreground flex h-9 w-8 items-center justify-center rounded-r-full border border-l transition-all hover:cursor-pointer"
             title="Delete Bookmark"
           >
@@ -138,10 +179,16 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
       <button
         onClick={handleQuickSave}
         disabled={isSaved || isAdActive}
-        className={`border-border bg-card/80 hover:bg-accent/50 hover:border-primary/50 flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all hover:cursor-pointer active:scale-95 ${
-          isSaved ? "bg-primary/10 border-primary/50 cursor-default" : ""
+        className={`border-border bg-card/80 flex h-9 w-9 items-center justify-center rounded-full border shadow-sm backdrop-blur-md transition-all active:scale-95 ${
+          isAdActive
+            ? "cursor-not-allowed opacity-50 grayscale"
+            : isSaved
+              ? "bg-primary/10 border-primary/50 cursor-default"
+              : "hover:bg-accent/50 hover:border-primary/50 hover:cursor-pointer"
         }`}
-        title="Quick Bookmark"
+        title={
+          isAdActive ? "Quick Bookmark disabled during ads" : "Quick Bookmark"
+        }
       >
         <div className="relative flex items-center justify-center">
           <Bookmark

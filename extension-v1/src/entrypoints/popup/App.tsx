@@ -17,12 +17,23 @@ import { useHideComments } from "@/hooks/useHideComments";
 import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAutoResume } from "@/hooks/useAutoResume";
 
+import { useAllNotes } from "@/hooks/useAllNotes";
+
 function App() {
   const hideRecommendations = useHideRecommendations();
   const hideComments = useHideComments();
   const autoPause = useAutoPause();
   const autoResume = useAutoResume();
   const { theme, setTheme } = useTheme();
+
+  const { data: noteGroups = [], isLoading } = useAllNotes();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredGroups = noteGroups.filter(
+    (g) =>
+      g.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      g.channel.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <div className="bg-background text-foreground flex h-[450px] w-[350px] flex-col font-sans">
@@ -37,7 +48,7 @@ function App() {
       </div>
 
       <Tabs
-        defaultValue="settings"
+        defaultValue="notes"
         className="flex flex-1 flex-col overflow-hidden"
       >
         <TabsList className="bg-muted/50 grid w-full grid-cols-3 p-2">
@@ -65,12 +76,44 @@ function App() {
             <input
               type="text"
               placeholder="Search notes..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border py-2 pl-8 text-sm focus-visible:ring-2 focus-visible:outline-none"
             />
           </div>
-          <div className="flex h-40 flex-col items-center justify-center text-center opacity-50">
-            <FileText className="text-muted-foreground mb-2 h-10 w-10" />
-            <p className="text-sm">No notes found yet.</p>
+
+          <div className="space-y-3">
+            {filteredGroups.length > 0 ? (
+              filteredGroups.map((group) => (
+                <div
+                  key={group.video_id}
+                  className="bg-card hover:bg-accent/40 border-border group cursor-pointer rounded-lg border p-3 transition-all"
+                  onClick={() =>
+                    window.open(
+                      `https://www.youtube.com/watch?v=${group.video_id}`,
+                      "_blank"
+                    )
+                  }
+                >
+                  <h4 className="line-clamp-1 text-sm font-semibold">
+                    {group.title}
+                  </h4>
+                  <div className="mt-1 flex items-center justify-between">
+                    <span className="text-muted-foreground text-[10px]">
+                      {group.channel}
+                    </span>
+                    <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-bold">
+                      {group.count} {group.count === 1 ? "note" : "notes"}
+                    </span>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex h-40 flex-col items-center justify-center text-center opacity-50">
+                <FileText className="text-muted-foreground mb-2 h-10 w-10" />
+                <p className="text-sm">No notes found yet.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 

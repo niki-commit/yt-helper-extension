@@ -14,6 +14,14 @@ export default defineConfig({
   },
   vite: () => ({
     plugins: [tailwindcss()],
+    build: {
+      minify: "terser",
+      terserOptions: {
+        format: {
+          ascii_only: true,
+        },
+      },
+    },
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "src"),
