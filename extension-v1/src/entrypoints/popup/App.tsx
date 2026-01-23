@@ -3,6 +3,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   FileText,
   Bookmark,
   Settings,
@@ -18,6 +23,8 @@ import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAutoResume } from "@/hooks/useAutoResume";
 
 import { useAllNotes } from "@/hooks/useAllNotes";
+import { useAllBookmarks } from "@/hooks/useAllBookmarks";
+import { formatTime } from "@/lib/utils";
 
 function App() {
   const hideRecommendations = useHideRecommendations();
@@ -26,13 +33,21 @@ function App() {
   const autoResume = useAutoResume();
   const { theme, setTheme } = useTheme();
 
-  const { data: noteGroups = [], isLoading } = useAllNotes();
+  const { data: noteGroups = [], isLoading: isLoadingNotes } = useAllNotes();
+  const { data: bookmarks = [], isLoading: isLoadingBookmarks } =
+    useAllBookmarks();
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredGroups = noteGroups.filter(
-    (g) =>
+  const filteredNotes = (noteGroups as any[]).filter(
+    (g: any) =>
       g.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       g.channel.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const filteredBookmarks = (bookmarks as any[]).filter(
+    (b: any) =>
+      b.video_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      b.channel_title.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -52,18 +67,39 @@ function App() {
         className="flex flex-1 flex-col overflow-hidden"
       >
         <TabsList className="bg-muted/50 grid w-full grid-cols-3 p-2">
-          <TabsTrigger value="notes" className="gap-2">
-            <FileText className="h-4 w-4" />
-            Notes
-          </TabsTrigger>
-          <TabsTrigger value="bookmarks" className="gap-2">
-            <Bookmark className="h-4 w-4" />
-            Bookmarks
-          </TabsTrigger>
-          <TabsTrigger value="settings" className="gap-2">
-            <Settings className="h-4 w-4" />
-            Settings
-          </TabsTrigger>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger value="notes" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Notes
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>View your timestamped notes</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger value="bookmarks" className="gap-2">
+                <Bookmark className="h-4 w-4" />
+                Bookmarks
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Quick jump to saved moments</p>
+            </TooltipContent>
+          </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <TabsTrigger value="settings" className="gap-2">
+                <Settings className="h-4 w-4" />
+                Settings
+              </TabsTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Configure focus mode & preferences</p>
+            </TooltipContent>
+          </Tooltip>
         </TabsList>
 
         {/* NOTES TAB */}
@@ -72,7 +108,14 @@ function App() {
           className="flex-1 content-start overflow-auto p-4"
         >
           <div className="relative mb-4">
-            <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4" />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Search by title or channel</p>
+              </TooltipContent>
+            </Tooltip>
             <input
               type="text"
               placeholder="Search notes..."
@@ -82,12 +125,12 @@ function App() {
             />
           </div>
 
-          <div className="space-y-3">
-            {filteredGroups.length > 0 ? (
-              filteredGroups.map((group) => (
+          <div className="space-y-3 pb-4">
+            {filteredNotes.length > 0 ? (
+              filteredNotes.map((group: any) => (
                 <div
                   key={group.video_id}
-                  className="bg-card hover:bg-accent/40 border-border group cursor-pointer rounded-lg border p-3 transition-all"
+                  className="bg-card hover:bg-accent/40 border-border group flex cursor-pointer gap-3 rounded-lg border p-3 transition-all"
                   onClick={() =>
                     window.open(
                       `https://www.youtube.com/watch?v=${group.video_id}`,
@@ -95,16 +138,57 @@ function App() {
                     )
                   }
                 >
-                  <h4 className="line-clamp-1 text-sm font-semibold">
-                    {group.title}
-                  </h4>
-                  <div className="mt-1 flex items-center justify-between">
-                    <span className="text-muted-foreground text-[10px]">
-                      {group.channel}
-                    </span>
-                    <span className="bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-bold">
-                      {group.count} {group.count === 1 ? "note" : "notes"}
-                    </span>
+                  {/* Thumbnail / Icon */}
+                  <div className="bg-muted shrink-0 overflow-hidden rounded-md">
+                    {group.thumbnail_url ? (
+                      <img
+                        src={group.thumbnail_url}
+                        alt=""
+                        className="h-10 w-16 object-cover"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          // Try fallback to medium quality if HQ fails
+                          if (
+                            img.src.includes("hqdefault.jpg") &&
+                            group.video_id
+                          ) {
+                            img.src = `https://i.ytimg.com/vi/${group.video_id}/mqdefault.jpg`;
+                          } else {
+                            // Final fallback to icon
+                            img.style.display = "none";
+                            img.nextElementSibling?.classList.remove("hidden");
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`flex h-10 w-16 items-center justify-center ${
+                        group.thumbnail_url ? "hidden" : ""
+                      }`}
+                    >
+                      <FileText className="text-muted-foreground h-4 w-4" />
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <h4 className="line-clamp-2 cursor-help text-xs leading-tight font-semibold">
+                          {group.title}
+                        </h4>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[280px]">
+                        <p>{group.title}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground line-clamp-1 text-[10px]">
+                        {group.channel}
+                      </span>
+                      <span className="bg-primary/10 text-primary shrink-0 rounded-full px-2 py-0.5 text-[9px] font-bold">
+                        {group.count} {group.count === 1 ? "note" : "notes"}
+                      </span>
+                    </div>
                   </div>
                 </div>
               ))
@@ -120,10 +204,102 @@ function App() {
         {/* BOOKMARKS TAB */}
         <TabsContent
           value="bookmarks"
-          className="flex flex-1 flex-col items-center justify-center overflow-auto p-4 text-center opacity-50"
+          className="flex-1 content-start overflow-auto p-4"
         >
-          <Bookmark className="text-muted-foreground mb-2 h-10 w-10" />
-          <p className="text-sm">No bookmarks saved.</p>
+          <div className="relative mb-4">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Search className="text-muted-foreground absolute top-2.5 left-2 h-4 w-4 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Search bookmarks</p>
+              </TooltipContent>
+            </Tooltip>
+            <input
+              type="text"
+              placeholder="Search bookmarks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring w-full rounded-md border py-2 pl-8 text-sm focus-visible:ring-2 focus-visible:outline-none"
+            />
+          </div>
+
+          <div className="space-y-3 pb-4">
+            {filteredBookmarks.length > 0 ? (
+              filteredBookmarks.map((bookmark: any) => (
+                <div
+                  key={bookmark.videoId}
+                  className="bg-card hover:bg-accent/40 border-border group flex cursor-pointer gap-3 rounded-lg border p-3 transition-all"
+                  onClick={() =>
+                    window.open(
+                      `https://www.youtube.com/watch?v=${bookmark.videoId}&t=${Math.floor(
+                        bookmark.timestamp
+                      )}s`,
+                      "_blank"
+                    )
+                  }
+                >
+                  {/* Thumbnail / Icon */}
+                  <div className="bg-muted shrink-0 overflow-hidden rounded-md">
+                    {bookmark.thumbnail_url ? (
+                      <img
+                        src={bookmark.thumbnail_url}
+                        alt=""
+                        className="h-10 w-16 object-cover"
+                        onError={(e) => {
+                          const img = e.currentTarget;
+                          // Try fallback to medium quality if HQ fails
+                          if (
+                            img.src.includes("hqdefault.jpg") &&
+                            bookmark.videoId
+                          ) {
+                            img.src = `https://i.ytimg.com/vi/${bookmark.videoId}/mqdefault.jpg`;
+                          } else {
+                            // Final fallback to icon
+                            img.style.display = "none";
+                            img.nextElementSibling?.classList.remove("hidden");
+                          }
+                        }}
+                      />
+                    ) : null}
+                    <div
+                      className={`flex h-10 w-16 items-center justify-center ${
+                        bookmark.thumbnail_url ? "hidden" : ""
+                      }`}
+                    >
+                      <Bookmark className="text-muted-foreground h-4 w-4" />
+                    </div>
+                  </div>
+
+                  <div className="min-w-0 flex-1">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <h4 className="line-clamp-2 cursor-help text-xs leading-tight font-semibold">
+                          {bookmark.video_title}
+                        </h4>
+                      </TooltipTrigger>
+                      <TooltipContent side="top" className="max-w-[280px]">
+                        <p>{bookmark.video_title}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                    <div className="mt-1 flex items-center justify-between gap-2">
+                      <span className="text-muted-foreground line-clamp-1 text-[10px]">
+                        {bookmark.channel_title}
+                      </span>
+                      <span className="bg-secondary/20 text-secondary-foreground shrink-0 rounded-full px-2 py-0.5 font-mono text-[9px] font-bold">
+                        {formatTime(bookmark.timestamp)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="flex h-40 flex-col items-center justify-center text-center opacity-50">
+                <Bookmark className="text-muted-foreground mb-2 h-10 w-10" />
+                <p className="text-sm">No bookmarks found.</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         {/* SETTINGS TAB */}
@@ -228,24 +404,45 @@ function App() {
 
             <div className="bg-muted/50 grid grid-cols-3 gap-2 rounded-md p-1">
               {[
-                { id: "system" as Theme, label: "System", icon: Monitor },
-                { id: "light" as Theme, label: "Light", icon: Sun },
-                { id: "dark" as Theme, label: "Dark", icon: Moon },
+                {
+                  id: "system" as Theme,
+                  label: "System",
+                  icon: Monitor,
+                  tooltip: "Follow system theme",
+                },
+                {
+                  id: "light" as Theme,
+                  label: "Light",
+                  icon: Sun,
+                  tooltip: "Light mode",
+                },
+                {
+                  id: "dark" as Theme,
+                  label: "Dark",
+                  icon: Moon,
+                  tooltip: "Dark mode",
+                },
               ].map((t) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTheme(t.id)}
-                  className={`flex items-center justify-center gap-2 rounded-sm py-1.5 text-xs font-medium transition-all hover:cursor-pointer ${
-                    theme === t.id
-                      ? "bg-card text-foreground shadow-sm ring-1 ring-black/5"
-                      : "text-muted-foreground hover:bg-card/50"
-                  }`}
-                >
-                  <t.icon
-                    className={`h-3.5 w-3.5 ${theme === t.id ? "text-primary" : ""}`}
-                  />
-                  {t.label}
-                </button>
+                <Tooltip key={t.id}>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() => setTheme(t.id)}
+                      className={`flex items-center justify-center gap-2 rounded-sm py-1.5 text-xs font-medium transition-all hover:cursor-pointer ${
+                        theme === t.id
+                          ? "bg-card text-foreground shadow-sm ring-1 ring-black/5"
+                          : "text-muted-foreground hover:bg-card/50"
+                      }`}
+                    >
+                      <t.icon
+                        className={`h-3.5 w-3.5 ${theme === t.id ? "text-primary" : ""}`}
+                      />
+                      {t.label}
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{t.tooltip}</p>
+                  </TooltipContent>
+                </Tooltip>
               ))}
             </div>
           </div>

@@ -4,6 +4,7 @@ import { SidebarApp } from "@/components/SidebarApp";
 import { FloatingApp } from "@/components/FloatingApp";
 import { ChipApp } from "@/components/ChipApp";
 import { initFocusMode, initAutoPause } from "@/lib/settings";
+import { ShadowRootContext } from "@/components/ui/ShadowTooltip";
 import "@/assets/tailwind.css";
 
 export default defineContentScript({
@@ -27,7 +28,8 @@ export default defineContentScript({
       floating?: UiInstance;
       chipOwner?: UiInstance;
       chipPlayer?: UiInstance;
-      overlay?: any; // Manual mount
+      tooltipLayer?: UiInstance;
+      overlay?: any;
       isMounted: boolean;
       currentVideoId: string | null;
     } = {
@@ -41,7 +43,7 @@ export default defineContentScript({
       createShadowRootUi(ctx, {
         name: "vn-sidebar-desktop",
         position: "inline",
-        anchor: "#secondary",
+        anchor: "#secondary-inner", // More stable child of #secondary
         append: "first",
         onMount: (container: HTMLElement) => {
           container.style.backgroundColor = "transparent";
@@ -58,7 +60,11 @@ export default defineContentScript({
           container.appendChild(styleSheet);
 
           const root = ReactDOM.createRoot(container);
-          root.render(<SidebarApp />);
+          root.render(
+            <ShadowRootContext.Provider value={container}>
+              <SidebarApp />
+            </ShadowRootContext.Provider>
+          );
           return root;
         },
         onRemove: (root: Root | undefined) => root?.unmount(),
@@ -87,7 +93,11 @@ export default defineContentScript({
           container.appendChild(styleSheet);
 
           const root = ReactDOM.createRoot(container);
-          root.render(<SidebarApp />);
+          root.render(
+            <ShadowRootContext.Provider value={container}>
+              <SidebarApp />
+            </ShadowRootContext.Provider>
+          );
           return root;
         },
         onRemove: (root: Root | undefined) => root?.unmount(),
@@ -113,7 +123,11 @@ export default defineContentScript({
           container.style.zIndex = "2000"; // Above player controls
 
           const root = ReactDOM.createRoot(container);
-          root.render(<FloatingApp />);
+          root.render(
+            <ShadowRootContext.Provider value={container}>
+              <FloatingApp />
+            </ShadowRootContext.Provider>
+          );
           return root;
         },
         onRemove: (root: Root | undefined) => root?.unmount(),
@@ -128,12 +142,13 @@ export default defineContentScript({
         append: "last",
         onMount: (container: HTMLElement) => {
           container.style.backgroundColor = "transparent";
-          container.style.display = "contents";
           const root = ReactDOM.createRoot(container);
           root.render(
-            <Providers>
-              <ChipApp />
-            </Providers>
+            <ShadowRootContext.Provider value={container}>
+              <Providers>
+                <ChipApp />
+              </Providers>
+            </ShadowRootContext.Provider>
           );
           return root;
         },
@@ -152,9 +167,11 @@ export default defineContentScript({
           container.style.backgroundColor = "transparent";
           const root = ReactDOM.createRoot(container);
           root.render(
-            <Providers>
-              <ChipApp isPlayerControl={true} />
-            </Providers>
+            <ShadowRootContext.Provider value={container}>
+              <Providers>
+                <ChipApp isPlayerControl={true} />
+              </Providers>
+            </ShadowRootContext.Provider>
           );
           return root;
         },
@@ -162,8 +179,24 @@ export default defineContentScript({
       });
 
     // --- Mount Manager ---
+    let mountObserver: MutationObserver | null = null;
+    let isMounting = false;
+    let mountedPieces = {
+      sidebarDesktop: false,
+      sidebarMobile: false,
+      floating: false,
+      chipOwner: false,
+      chipPlayer: false,
+    };
+
+    const stopPolling = () => {
+      mountObserver?.disconnect();
+      mountObserver = null;
+      isMounting = false;
+    };
 
     const unmountAll = () => {
+      stopPolling();
       if (!uiState.isMounted) return;
       console.log("[VideoNotes] Unmounting all UI.");
 
@@ -172,6 +205,14 @@ export default defineContentScript({
       uiState.floating?.remove();
       uiState.chipOwner?.remove();
       uiState.chipPlayer?.remove();
+      uiState.tooltipLayer?.remove();
+
+      // Clear references to ensure fresh creation on next mount
+      uiState.sidebarDesktop = undefined;
+      uiState.sidebarMobile = undefined;
+      uiState.floating = undefined;
+      uiState.chipOwner = undefined;
+      uiState.chipPlayer = undefined;
 
       uiState.isMounted = false;
       uiState.currentVideoId = null;
@@ -184,68 +225,144 @@ export default defineContentScript({
         return;
       }
 
-      // Prevent duplicate mounting for the same video
+      // 1. Prevent double-mounting for the SAME video
       if (uiState.isMounted && uiState.currentVideoId === videoId) {
         return;
       }
 
-      console.log(`[VideoNotes] Mounting UI for Video: ${videoId}`);
+      // 2. If we are already in the process of mounting another video, stop everything
+      if (isMounting) {
+        stopPolling();
+      }
+
+      console.log(`[VideoNotes] Starting Mount sequence for: ${videoId}`);
+      isMounting = true;
       uiState.currentVideoId = videoId;
       uiState.isMounted = true;
 
-      // Cleanup any stale elements manually (prevents dupes)
+      // Reset mounted tracking
+      mountedPieces = {
+        sidebarDesktop: false,
+        sidebarMobile: false,
+        floating: false,
+        chipOwner: false,
+        chipPlayer: false,
+      };
+
+      // 3. Cleanup any stale elements manually (prevents dupes)
       document
         .querySelectorAll(
           "vn-sidebar-desktop, vn-sidebar-mobile, vn-floating, vn-chip, vn-player-chip"
         )
         .forEach((el) => el.remove());
 
-      // Initialize UI instances if needed
-      if (!uiState.sidebarDesktop)
-        uiState.sidebarDesktop = await createSidebarDesktopUi();
-      if (!uiState.sidebarMobile)
-        uiState.sidebarMobile = await createSidebarMobileUi();
-      if (!uiState.floating) uiState.floating = await createFloatingUi();
-      if (!uiState.chipOwner) uiState.chipOwner = await createChipOwnerUi();
-      if (!uiState.chipPlayer) uiState.chipPlayer = await createChipPlayerUi();
+      // 4. Create fresh instances
+      uiState.sidebarDesktop = await createSidebarDesktopUi();
+      uiState.sidebarMobile = await createSidebarMobileUi();
+      uiState.floating = await createFloatingUi();
+      uiState.chipOwner = await createChipOwnerUi();
+      uiState.chipPlayer = await createChipPlayerUi();
 
-      // Mount logic with retries (DOM availability)
       const tryMount = () => {
         // Owner Chip
         if (
-          document.querySelector("ytd-watch-metadata #owner") &&
-          !document.querySelector("vn-chip")
+          !mountedPieces.chipOwner &&
+          document.querySelector("ytd-watch-metadata #owner")
         ) {
           uiState.chipOwner?.mount();
+          mountedPieces.chipOwner = true;
+          console.log("[VideoNotes] Mounted: Chip (Owner)");
         }
         // Player Chip
         if (
-          document.querySelector(".ytp-right-controls") &&
-          !document.querySelector("vn-player-chip")
+          !mountedPieces.chipPlayer &&
+          document.querySelector(".ytp-right-controls")
         ) {
           uiState.chipPlayer?.mount();
+          mountedPieces.chipPlayer = true;
+          console.log("[VideoNotes] Mounted: Chip (Player)");
         }
-        // Desktop Sidebar (Check for secondary column)
-        const secondary = document.querySelector("#secondary");
-        if (secondary && !document.querySelector("vn-sidebar-desktop")) {
+        // Desktop Sidebar (Using inner for stability)
+        if (
+          !mountedPieces.sidebarDesktop &&
+          document.querySelector("#secondary-inner")
+        ) {
           uiState.sidebarDesktop?.mount();
+          mountedPieces.sidebarDesktop = true;
+          console.log("[VideoNotes] Mounted: Sidebar (Desktop)");
         }
-        // Mobile Sidebar (Check for metadata section)
-        const metadata = document.querySelector("ytd-watch-metadata");
-        if (metadata && !document.querySelector("vn-sidebar-mobile")) {
+        // Mobile Sidebar
+        if (
+          !mountedPieces.sidebarMobile &&
+          document.querySelector("ytd-watch-metadata")
+        ) {
           uiState.sidebarMobile?.mount();
+          mountedPieces.sidebarMobile = true;
+          console.log("[VideoNotes] Mounted: Sidebar (Mobile)");
+        }
+        // Floating UI
+        if (!mountedPieces.floating) {
+          uiState.floating?.mount();
+          mountedPieces.floating = true;
+          console.log("[VideoNotes] Mounted: Floating UI");
         }
 
-        // Always mount floating (once)
-        if (!document.querySelector("vn-floating")) {
-          uiState.floating?.mount();
-        }
+        // Return true only if EVERYTHING is mounted
+        // Check DOM directly for final confirmation
+        const allInDom =
+          document.querySelector("vn-chip") &&
+          document.querySelector("vn-player-chip") &&
+          (document.querySelector("vn-sidebar-desktop") ||
+            document.querySelector("vn-sidebar-mobile")) &&
+          document.querySelector("vn-floating");
+
+        return !!allInDom;
       };
 
-      tryMount();
-      // Retry a few times for dynamic elements
-      setTimeout(tryMount, 1000);
-      setTimeout(tryMount, 3000);
+      // 5. Initial Attempt
+      if (tryMount()) {
+        isMounting = false;
+        return;
+      }
+
+      // 6. Robust Polling with MutationObserver
+      console.log("[VideoNotes] Some anchors missing. Starting observer...");
+      mountObserver = new MutationObserver(() => {
+        if (tryMount()) {
+          console.log("[VideoNotes] All UI pieces mounted successfully.");
+          stopPolling();
+        }
+      });
+
+      mountObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+      });
+
+      // 7. Extra interval polling (Fallback)
+      const interval = setInterval(() => {
+        if (!isMounting) {
+          clearInterval(interval);
+          return;
+        }
+        if (tryMount()) {
+          console.log("[VideoNotes] Elements mounted via fallback interval.");
+          stopPolling();
+          clearInterval(interval);
+        }
+      }, 1000);
+
+      // 8. Fail-safe: Stop polling after 20 seconds
+      setTimeout(() => {
+        clearInterval(interval);
+        if (isMounting) {
+          console.log(
+            "[VideoNotes] Mount polling timed out. State:",
+            mountedPieces
+          );
+          stopPolling();
+        }
+      }, 20000);
     };
 
     // --- Navigation Handlers ---

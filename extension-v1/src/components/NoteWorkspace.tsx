@@ -5,8 +5,15 @@ import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAdState } from "@/hooks/useAdState";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import { useNotes } from "@/hooks/useNotes";
+import { useVideoMetadata } from "@/hooks/useVideoMetadata";
 import { useNoteStore } from "@/storage/noteStore";
 import { Note } from "@/types/schema";
+import { cn, formatTime } from "@/lib/utils";
+import {
+  ShadowTooltip,
+  ShadowTooltipContent,
+  ShadowTooltipTrigger,
+} from "@/components/ui/ShadowTooltip";
 
 interface NoteWorkspaceProps {
   initialTimestamp?: number | null;
@@ -38,6 +45,9 @@ export function NoteWorkspace({
   // Database CRUD
   const { notes, saveNote, deleteNote, isSaving } = useNotes(videoId);
 
+  // Ensure video metadata is saved
+  useVideoMetadata(videoId);
+
   // Focus Handlers
   const onEditorFocus = () => {
     // We've decoupled this from the global "Auto-Pause" setting (which is for Tab/Window switches).
@@ -52,13 +62,6 @@ export function NoteWorkspace({
 
   const onEditorBlur = () => {
     console.log("[VideoNotes] onEditorBlur triggered");
-  };
-
-  // Format Helper: Seconds to MM:SS
-  const formatTime = (seconds: number) => {
-    const min = Math.floor(seconds / 60);
-    const sec = Math.floor(seconds % 60);
-    return `${min}:${sec.toString().padStart(2, "0")}`;
   };
 
   // Sync external initialTimestamp to global store
@@ -157,13 +160,19 @@ export function NoteWorkspace({
               <div className="bg-primary/10 text-primary border-primary/20 flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium">
                 <Clock className="h-3.5 w-3.5" />
                 <span>{formatTime(activeNoteTimestamp)}</span>
-                <button
-                  onClick={() => setActiveNoteTimestamp(null)}
-                  className="hover:bg-primary/20 ml-1 rounded-full p-0.5 transition-colors"
-                  title="Clear Timestamp"
-                >
-                  <Plus className="h-3.5 w-3.5 rotate-45" />
-                </button>
+                <ShadowTooltip>
+                  <ShadowTooltipTrigger asChild>
+                    <button
+                      onClick={() => setActiveNoteTimestamp(null)}
+                      className="hover:bg-primary/20 ml-1 rounded-full p-0.5 transition-colors"
+                    >
+                      <Plus className="h-3.5 w-3.5 rotate-45" />
+                    </button>
+                  </ShadowTooltipTrigger>
+                  <ShadowTooltipContent side="top">
+                    <p>Clear timestamp</p>
+                  </ShadowTooltipContent>
+                </ShadowTooltip>
               </div>
             ) : (
               <div className="bg-muted/50 text-muted-foreground flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm">
@@ -175,23 +184,29 @@ export function NoteWorkspace({
           <div className="flex items-center gap-2">
             {/* Capture Button (only show if no timestamp) */}
             {activeNoteTimestamp === null && (
-              <button
-                onClick={handleCaptureTimestamp}
-                disabled={isAdActive}
-                className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95 ${
-                  isAdActive
-                    ? "cursor-not-allowed border-gray-300 opacity-50"
-                    : "hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
-                }`}
-                title={
-                  isAdActive
-                    ? "Cannot capture time during ads"
-                    : "Capture Current Time"
-                }
-              >
-                <Clock className="h-3.5 w-3.5" />
-                <span>Stamp</span>
-              </button>
+              <ShadowTooltip>
+                <ShadowTooltipTrigger asChild>
+                  <button
+                    onClick={handleCaptureTimestamp}
+                    disabled={isAdActive}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95 ${
+                      isAdActive
+                        ? "cursor-not-allowed border-gray-300 opacity-50"
+                        : "hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
+                    }`}
+                  >
+                    <Clock className="h-3.5 w-3.5" />
+                    <span>Stamp</span>
+                  </button>
+                </ShadowTooltipTrigger>
+                <ShadowTooltipContent side="top">
+                  <p>
+                    {isAdActive
+                      ? "Cannot capture during ads"
+                      : "Capture current timestamp"}
+                  </p>
+                </ShadowTooltipContent>
+              </ShadowTooltip>
             )}
           </div>
         </div>
@@ -264,9 +279,6 @@ export function NoteWorkspace({
                 ? "cursor-not-allowed bg-gray-400 text-gray-200 opacity-50"
                 : "bg-primary hover:bg-primary/90 text-primary-foreground hover:cursor-pointer"
             }`}
-            title={
-              isAdActive ? "Cannot save timestamps during ads" : "Save Note"
-            }
           >
             {isSaving ? (
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -289,7 +301,7 @@ export function NoteWorkspace({
 
         <div className="flex-1 space-y-4 overflow-y-auto pr-2 pb-4">
           {notes.length > 0 ? (
-            notes.map((note) => (
+            notes.map((note: Note) => (
               <div
                 key={note.id}
                 className={`bg-card group border-border relative rounded-xl border p-3 shadow-xs transition-all ${
@@ -300,23 +312,29 @@ export function NoteWorkspace({
               >
                 <div className="mb-2 flex items-center justify-between">
                   {note.timestamp !== undefined ? (
-                    <button
-                      onClick={() => !isAdActive && seekTo(note.timestamp!)}
-                      disabled={isAdActive}
-                      className={`flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-bold transition-colors ${
-                        isAdActive
-                          ? "cursor-not-allowed text-gray-400 opacity-50"
-                          : "text-primary hover:bg-primary/10"
-                      }`}
-                      title={
-                        isAdActive
-                          ? "Seeking disabled during ads"
-                          : "Jump to moment"
-                      }
-                    >
-                      <Clock className="h-3 w-3" />
-                      {formatTime(note.timestamp)}
-                    </button>
+                    <ShadowTooltip>
+                      <ShadowTooltipTrigger asChild>
+                        <button
+                          onClick={() => !isAdActive && seekTo(note.timestamp!)}
+                          disabled={isAdActive}
+                          className={`flex items-center gap-1.5 rounded-md px-1.5 py-0.5 text-xs font-bold transition-colors ${
+                            isAdActive
+                              ? "cursor-not-allowed text-gray-400 opacity-50"
+                              : "text-primary hover:bg-primary/10"
+                          }`}
+                        >
+                          <Clock className="h-3 w-3" />
+                          {formatTime(note.timestamp)}
+                        </button>
+                      </ShadowTooltipTrigger>
+                      <ShadowTooltipContent side="top">
+                        <p>
+                          {isAdActive
+                            ? "Seeking disabled during ads"
+                            : "Jump to this moment"}
+                        </p>
+                      </ShadowTooltipContent>
+                    </ShadowTooltip>
                   ) : (
                     <span className="text-muted-foreground px-1.5 py-0.5 text-[10px] font-medium uppercase">
                       General
@@ -330,27 +348,39 @@ export function NoteWorkspace({
                         : "opacity-0 group-hover:opacity-100"
                     }`}
                   >
-                    <button
-                      onClick={() => handleEditNote(note)}
-                      disabled={isAdActive}
-                      className={`text-muted-foreground rounded-md p-1 transition-colors ${
-                        isAdActive
-                          ? "cursor-not-allowed opacity-30"
-                          : "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20"
-                      }`}
-                      title={
-                        isAdActive ? "Cannot edit during ads" : "Edit Note"
-                      }
-                    >
-                      <Edit2 className="h-3.5 w-3.5" />
-                    </button>
-                    <button
-                      onClick={() => deleteNote(note.id!)}
-                      className="text-muted-foreground rounded-md p-1 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                      title="Delete Note"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
+                    <ShadowTooltip>
+                      <ShadowTooltipTrigger asChild>
+                        <button
+                          onClick={() => handleEditNote(note)}
+                          disabled={isAdActive}
+                          className={`text-muted-foreground rounded-md p-1 transition-colors ${
+                            isAdActive
+                              ? "cursor-not-allowed opacity-30"
+                              : "hover:bg-amber-50 hover:text-amber-600 dark:hover:bg-amber-900/20"
+                          }`}
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
+                      </ShadowTooltipTrigger>
+                      <ShadowTooltipContent side="top">
+                        <p>
+                          {isAdActive ? "Cannot edit during ads" : "Edit note"}
+                        </p>
+                      </ShadowTooltipContent>
+                    </ShadowTooltip>
+                    <ShadowTooltip>
+                      <ShadowTooltipTrigger asChild>
+                        <button
+                          onClick={() => deleteNote(note.id!)}
+                          className="text-muted-foreground rounded-md p-1 transition-colors hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </ShadowTooltipTrigger>
+                      <ShadowTooltipContent side="top">
+                        <p>Delete note</p>
+                      </ShadowTooltipContent>
+                    </ShadowTooltip>
                   </div>
                 </div>
 

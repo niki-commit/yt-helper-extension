@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { dbProxy } from "@/lib/db-proxy";
 import { Bookmark } from "@/types/schema";
 
 export function useBookmarks(videoId: string | null) {
@@ -9,7 +9,8 @@ export function useBookmarks(videoId: string | null) {
     queryKey: ["bookmark", videoId],
     queryFn: async () => {
       if (!videoId) return null;
-      return await db.bookmarks.get(videoId);
+      const result = await dbProxy.bookmarks.get(videoId);
+      return result[0] || null;
     },
     enabled: !!videoId,
   });
@@ -22,22 +23,24 @@ export function useBookmarks(videoId: string | null) {
         timestamp,
         createdAt: Date.now(),
       };
-      await db.bookmarks.put(newBookmark);
+      await dbProxy.bookmarks.save(newBookmark);
       return newBookmark;
     },
     onSuccess: (newBookmark) => {
       if (!newBookmark) return;
       queryClient.setQueryData(["bookmark", videoId], newBookmark);
+      queryClient.invalidateQueries({ queryKey: ["all-bookmarks"] });
     },
   });
 
   const deleteBookmark = useMutation({
     mutationFn: async () => {
       if (!videoId) return;
-      await db.bookmarks.delete(videoId);
+      await dbProxy.bookmarks.delete(videoId);
     },
     onSuccess: () => {
       queryClient.setQueryData(["bookmark", videoId], null);
+      queryClient.invalidateQueries({ queryKey: ["all-bookmarks"] });
     },
     onError: (err) => {
       console.error("[VideoNotes] useBookmarks: Delete failed:", err);

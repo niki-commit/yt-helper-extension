@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db } from "@/lib/db";
+import { dbProxy } from "@/lib/db-proxy";
 import { Note } from "@/types/schema";
 import { v4 as uuidv4 } from "uuid";
 
@@ -11,12 +11,10 @@ export function useNotes(videoId: string | null) {
     queryKey: ["notes", videoId],
     queryFn: async () => {
       if (!videoId) return [];
-      return await db.notes
-        .where("video_id")
-        .equals(videoId)
-        .and((n) => !n.is_deleted)
-        .reverse()
-        .sortBy("last_modified_at");
+      const result = await dbProxy.notes.get(videoId);
+      return result.sort(
+        (a: any, b: any) => b.last_modified_at - a.last_modified_at
+      );
     },
     enabled: !!videoId,
   });
@@ -40,25 +38,23 @@ export function useNotes(videoId: string | null) {
         is_deleted: false,
       };
 
-      await db.notes.put(note);
+      await dbProxy.notes.save(note);
       return note;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes", videoId] });
+      queryClient.invalidateQueries({ queryKey: ["all-notes"] });
     },
   });
 
   // Delete Note (Soft Delete)
   const deleteNoteMutation = useMutation({
     mutationFn: async (noteId: string) => {
-      await db.notes.update(noteId, {
-        is_deleted: true,
-        last_modified_at: Date.now(),
-        is_dirty: true,
-      });
+      await dbProxy.notes.delete(noteId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes", videoId] });
+      queryClient.invalidateQueries({ queryKey: ["all-notes"] });
     },
   });
 
