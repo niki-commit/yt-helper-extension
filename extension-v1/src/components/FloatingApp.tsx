@@ -7,6 +7,7 @@ import { Providers } from "@/components/Providers";
 export function FloatingApp() {
   const [isOpen, setIsOpen] = useState(false);
   const [initialTimestamp, setInitialTimestamp] = useState<number | null>(null);
+  const [focusNote, setFocusNote] = useState<boolean>(false);
   const [position, setPosition] = useState({ x: 80, y: 80 });
   const [size, setSize] = useState({ width: 400, height: 600 });
   const [isDragging, setIsDragging] = useState(false);
@@ -27,15 +28,28 @@ export function FloatingApp() {
 
   const { resolvedTheme } = useTheme();
 
-  // Listen for open event
+  // Listen for events
   useEffect(() => {
     const handleOpen = (e: any) => {
-      setInitialTimestamp(e.detail.currentTime ?? null);
+      if (e.detail?.currentTime !== undefined) {
+        setInitialTimestamp(e.detail.currentTime);
+      }
+      setFocusNote(!!e.detail?.focusNote);
       setIsOpen(true);
     };
 
+    const handleToggle = (e: any) => {
+      // Only toggle if we ARE in fullscreen
+      if (!e.detail?.isFullscreen) return;
+      setIsOpen((prev) => !prev);
+    };
+
     window.addEventListener("VN_OPEN_FLOATING", handleOpen);
-    return () => window.removeEventListener("VN_OPEN_FLOATING", handleOpen);
+    window.addEventListener("VN_TOGGLE_UI", handleToggle);
+    return () => {
+      window.removeEventListener("VN_OPEN_FLOATING", handleOpen);
+      window.removeEventListener("VN_TOGGLE_UI", handleToggle);
+    };
   }, []);
 
   // Auto-close on Fullscreen exit
@@ -44,6 +58,7 @@ export function FloatingApp() {
       if (!document.fullscreenElement && isOpen) {
         console.log("[VideoNotes] Exited fullscreen. Closing floating UI.");
         setIsOpen(false);
+        setFocusNote(false);
       }
     };
 
@@ -144,6 +159,7 @@ export function FloatingApp() {
             onClick={() => {
               setIsOpen(false);
               setInitialTimestamp(null);
+              setFocusNote(false);
             }}
             className="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-full p-1 transition-colors"
           >
@@ -154,9 +170,11 @@ export function FloatingApp() {
         {/* Workspace */}
         <NoteWorkspace
           initialTimestamp={initialTimestamp}
+          focusNote={focusNote}
           onSaveComplete={() => {
             // Keep floating UI open after save for continuous note taking
             setInitialTimestamp(null);
+            setFocusNote(false);
           }}
         />
 

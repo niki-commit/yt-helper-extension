@@ -67,39 +67,45 @@ function App() {
         className="flex flex-1 flex-col overflow-hidden"
       >
         <TabsList className="bg-muted/50 grid w-full grid-cols-3 p-2">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="notes" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Notes
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>View your timestamped notes</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="bookmarks" className="gap-2">
-                <Bookmark className="h-4 w-4" />
-                Bookmarks
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Quick jump to saved moments</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <TabsTrigger value="settings" className="gap-2">
-                <Settings className="h-4 w-4" />
-                Settings
-              </TabsTrigger>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>Configure focus mode & preferences</p>
-            </TooltipContent>
-          </Tooltip>
+          <TabsTrigger value="notes" className="gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Notes
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>View your timestamped notes</p>
+              </TooltipContent>
+            </Tooltip>
+          </TabsTrigger>
+          <TabsTrigger value="bookmarks" className="gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2">
+                  <Bookmark className="h-4 w-4" />
+                  Bookmarks
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Quick jump to saved moments</p>
+              </TooltipContent>
+            </Tooltip>
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Settings
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p>Configure focus mode & preferences</p>
+              </TooltipContent>
+            </Tooltip>
+          </TabsTrigger>
         </TabsList>
 
         {/* NOTES TAB */}
@@ -394,6 +400,49 @@ function App() {
             </div>
           </div>
 
+          {/* Keyboard Shortcuts Section */}
+          <div className="border-border bg-card space-y-3 rounded-lg border p-4 shadow-sm">
+            <div className="space-y-0.5">
+              <Label className="text-base font-medium">
+                Keyboard Shortcuts
+              </Label>
+              <p className="text-muted-foreground text-xs">
+                Quick commands for faster note taking
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              {[
+                { label: "New Note", key: "N", desc: "Stamp & open editor" },
+                { label: "Toggle UI", key: "S", desc: "Show/hide workspace" },
+                { label: "Quick Save", key: "B", desc: "Instant bookmark" },
+              ].map((s) => (
+                <div
+                  key={s.key}
+                  className="flex items-center justify-between text-xs"
+                >
+                  <div className="flex flex-col">
+                    <span className="font-medium">{s.label}</span>
+                    <span className="text-muted-foreground text-[10px]">
+                      {s.desc}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 font-mono">
+                    <span className="bg-muted text-muted-foreground flex h-5 min-w-8 items-center justify-center rounded-sm px-1.5 text-[10px] font-bold">
+                      {window.navigator.userAgent.toLowerCase().includes("mac")
+                        ? "⌥"
+                        : "Alt"}
+                    </span>
+                    <span className="text-muted-foreground">+</span>
+                    <span className="bg-muted text-muted-foreground flex h-5 min-w-5 items-center justify-center rounded-sm px-1.5 text-[10px] font-bold">
+                      {s.key}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <div className="border-border bg-card flex flex-col rounded-lg border p-4 shadow-sm">
             <div className="mb-4 space-y-0.5">
               <Label className="text-base font-medium">Appearance</Label>
@@ -427,10 +476,10 @@ function App() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setTheme(t.id)}
-                      className={`flex items-center justify-center gap-2 rounded-sm py-1.5 text-xs font-medium transition-all hover:cursor-pointer ${
+                      className={`flex items-center justify-center gap-2 rounded-md py-1.5 text-xs font-medium transition-all hover:cursor-pointer ${
                         theme === t.id
-                          ? "bg-card text-foreground shadow-sm ring-1 ring-black/5"
-                          : "text-muted-foreground hover:bg-card/50"
+                          ? "bg-primary/10 text-primary border-primary/20 border shadow-xs"
+                          : "text-muted-foreground hover:bg-muted/50 border border-transparent"
                       }`}
                     >
                       <t.icon

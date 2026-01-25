@@ -5,6 +5,9 @@ import { FloatingApp } from "@/components/FloatingApp";
 import { ChipApp } from "@/components/ChipApp";
 import { initFocusMode, initAutoPause } from "@/lib/settings";
 import { ShadowRootContext } from "@/components/ui/ShadowTooltip";
+import { Providers } from "@/components/Providers";
+import { KeyboardShortcutsHandler } from "@/components/KeyboardShortcutsHandler";
+import { Toaster } from "@/components/ui/sonner";
 import "@/assets/tailwind.css";
 
 export default defineContentScript({
@@ -28,6 +31,7 @@ export default defineContentScript({
       floating?: UiInstance;
       chipOwner?: UiInstance;
       chipPlayer?: UiInstance;
+      globalLogic?: UiInstance;
       tooltipLayer?: UiInstance;
       overlay?: any;
       isMounted: boolean;
@@ -178,6 +182,33 @@ export default defineContentScript({
         onRemove: (root: Root | undefined) => root?.unmount(),
       });
 
+    // 5. Global Logic UI (Headless listener & Toaster)
+    const createGlobalLogicUi = async () =>
+      createShadowRootUi(ctx, {
+        name: "vn-global-logic",
+        position: "inline",
+        anchor: "body",
+        append: "last",
+        onMount: (container: HTMLElement) => {
+          container.style.position = "fixed";
+          container.style.inset = "0";
+          container.style.backgroundColor = "transparent";
+          container.style.pointerEvents = "none";
+          container.style.zIndex = "999999"; // Ensure toasts are on top
+          const root = ReactDOM.createRoot(container);
+          root.render(
+            <ShadowRootContext.Provider value={container}>
+              <Providers>
+                <KeyboardShortcutsHandler />
+                <Toaster position="bottom-right" richColors expand={true} />
+              </Providers>
+            </ShadowRootContext.Provider>
+          );
+          return root;
+        },
+        onRemove: (root: Root | undefined) => root?.unmount(),
+      });
+
     // --- Mount Manager ---
     let mountObserver: MutationObserver | null = null;
     let isMounting = false;
@@ -203,8 +234,8 @@ export default defineContentScript({
       uiState.sidebarDesktop?.remove();
       uiState.sidebarMobile?.remove();
       uiState.floating?.remove();
-      uiState.chipOwner?.remove();
       uiState.chipPlayer?.remove();
+      uiState.globalLogic?.remove();
       uiState.tooltipLayer?.remove();
 
       // Clear references to ensure fresh creation on next mount
@@ -213,6 +244,7 @@ export default defineContentScript({
       uiState.floating = undefined;
       uiState.chipOwner = undefined;
       uiState.chipPlayer = undefined;
+      uiState.globalLogic = undefined;
 
       uiState.isMounted = false;
       uiState.currentVideoId = null;
@@ -249,14 +281,16 @@ export default defineContentScript({
         chipPlayer: false,
       };
 
-      // 3. Cleanup any stale elements manually (prevents dupes)
       document
         .querySelectorAll(
-          "vn-sidebar-desktop, vn-sidebar-mobile, vn-floating, vn-chip, vn-player-chip"
+          "vn-sidebar-desktop, vn-sidebar-mobile, vn-floating, vn-chip, vn-player-chip, vn-global-logic"
         )
         .forEach((el) => el.remove());
 
       // 4. Create fresh instances
+      uiState.globalLogic = await createGlobalLogicUi();
+      uiState.globalLogic.mount();
+
       uiState.sidebarDesktop = await createSidebarDesktopUi();
       uiState.sidebarMobile = await createSidebarMobileUi();
       uiState.floating = await createFloatingUi();

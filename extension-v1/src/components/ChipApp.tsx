@@ -123,9 +123,6 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
   // Only show in player controls if fullscreen is active
   if (isPlayerControl && !isFullscreen) return null;
 
-  // Only show in player controls if fullscreen is active
-  if (isPlayerControl && !isFullscreen) return null;
-
   return (
     <div
       className={`${
@@ -149,7 +146,7 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
             <Layout className="text-primary h-4 w-4 transition-colors" />
           </button>
         </ShadowTooltipTrigger>
-        <ShadowTooltipContent side="top">
+        <ShadowTooltipContent side="top" shortcut="S">
           <p>{isAdActive ? "Disabled during ads" : "Open workspace"}</p>
         </ShadowTooltipContent>
       </ShadowTooltip>
@@ -170,7 +167,7 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
             <span>{isAdActive ? "Ad Active" : "Note"}</span>
           </button>
         </ShadowTooltipTrigger>
-        <ShadowTooltipContent side="top">
+        <ShadowTooltipContent side="top" shortcut="N">
           <p>
             {isAdActive
               ? "Disabled during ads"
@@ -273,7 +270,7 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
             </div>
           </button>
         </ShadowTooltipTrigger>
-        <ShadowTooltipContent side="top">
+        <ShadowTooltipContent side="top" shortcut="B">
           <p>
             {isAdActive
               ? "Disabled during ads"

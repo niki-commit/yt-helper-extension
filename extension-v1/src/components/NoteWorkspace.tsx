@@ -18,11 +18,13 @@ import {
 interface NoteWorkspaceProps {
   initialTimestamp?: number | null;
   onSaveComplete?: () => void;
+  focusNote?: boolean;
 }
 
 export function NoteWorkspace({
   initialTimestamp,
   onSaveComplete,
+  focusNote,
 }: NoteWorkspaceProps) {
   const { isAutoPauseEnabled } = useAutoPause();
 
@@ -222,7 +224,8 @@ export function NoteWorkspace({
             // or if we are actively editing a note. This prevents "Focus Ghost" on expansion.
             autofocus={
               (initialTimestamp !== null && initialTimestamp !== undefined) ||
-              activeNoteId
+              activeNoteId ||
+              focusNote
                 ? "end"
                 : false
             }

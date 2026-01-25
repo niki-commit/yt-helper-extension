@@ -13,6 +13,7 @@ import { useVideoMetadataSync } from "@/hooks/useVideoMetadataSync";
 export function SidebarAppContent() {
   const [value, setValue] = useState<string>("");
   const [initialTimestamp, setInitialTimestamp] = useState<number | null>(null);
+  const [focusNote, setFocusNote] = useState<boolean>(false);
   const { resolvedTheme } = useTheme();
 
   // Sync Video Metadata to DB
@@ -21,12 +22,25 @@ export function SidebarAppContent() {
   useEffect(() => {
     const handleOpen = (e: any) => {
       console.log("[VideoNotes] Sidebar received open event", e.detail);
-      setInitialTimestamp(e.detail.currentTime ?? null);
+      if (e.detail?.currentTime !== undefined) {
+        setInitialTimestamp(e.detail.currentTime);
+      }
+      setFocusNote(!!e.detail?.focusNote);
       setValue("item-1"); // Auto-expand
     };
 
+    const handleToggle = (e: any) => {
+      // Only toggle if we are NOT in fullscreen
+      if (e.detail?.isFullscreen) return;
+      setValue((prev) => (prev === "item-1" ? "" : "item-1"));
+    };
+
     window.addEventListener("VN_OPEN_SIDEBAR", handleOpen);
-    return () => window.removeEventListener("VN_OPEN_SIDEBAR", handleOpen);
+    window.addEventListener("VN_TOGGLE_UI", handleToggle);
+    return () => {
+      window.removeEventListener("VN_OPEN_SIDEBAR", handleOpen);
+      window.removeEventListener("VN_TOGGLE_UI", handleToggle);
+    };
   }, []);
 
   return (
@@ -43,6 +57,7 @@ export function SidebarAppContent() {
           // so that the next manual open starts fresh.
           if (!newValue) {
             setInitialTimestamp(null);
+            setFocusNote(false);
           }
         }}
         className="w-full"
@@ -59,9 +74,11 @@ export function SidebarAppContent() {
             <div className="h-[520px] overflow-auto pt-2">
               <NoteWorkspace
                 initialTimestamp={initialTimestamp}
+                focusNote={focusNote}
                 onSaveComplete={() => {
                   // Keep sidebar open after save for continuous note taking
                   setInitialTimestamp(null);
+                  setFocusNote(false);
                 }}
               />
             </div>

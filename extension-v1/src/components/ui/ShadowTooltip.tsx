@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-
 import { cn } from "@/lib/utils";
+import { Kbd } from "@/components/ui/kbd";
 
 /**
  * Shadow DOM compatible tooltip components.
@@ -80,6 +80,14 @@ interface ShadowTooltipContentProps extends React.ComponentProps<
   typeof TooltipPrimitive.Content
 > {
   container?: HTMLElement | null;
+  shortcut?: string | string[];
+}
+
+function getPlatformModifier() {
+  if (typeof window === "undefined") return "Alt";
+  const userAgent = window.navigator.userAgent.toLowerCase();
+  if (userAgent.includes("mac")) return "⌥";
+  return "Alt";
 }
 
 function ShadowTooltipContent({
@@ -87,6 +95,7 @@ function ShadowTooltipContent({
   sideOffset = 4,
   children,
   container: propContainer,
+  shortcut,
   ...props
 }: ShadowTooltipContentProps) {
   // Consume the context (Global from content.tsx OR Local from ShadowTooltip prop)
@@ -99,6 +108,8 @@ function ShadowTooltipContent({
     return null;
   }
 
+  const modifier = getPlatformModifier();
+
   return (
     <TooltipPrimitive.Portal container={container}>
       <TooltipPrimitive.Content
@@ -110,7 +121,26 @@ function ShadowTooltipContent({
         )}
         {...props}
       >
-        {children}
+        <div className="flex items-center gap-2">
+          <span>{children}</span>
+          {shortcut && (
+            <div className="flex items-center gap-0.5">
+              <Kbd className="h-4 min-w-[16px] px-1 text-[9px]">{modifier}</Kbd>
+              <span className="text-[10px] opacity-70">+</span>
+              {Array.isArray(shortcut) ? (
+                shortcut.map((s, i) => (
+                  <Kbd key={i} className="h-4 min-w-[16px] px-1 text-[9px]">
+                    {s}
+                  </Kbd>
+                ))
+              ) : (
+                <Kbd className="h-4 min-w-[16px] px-1 text-[9px]">
+                  {shortcut}
+                </Kbd>
+              )}
+            </div>
+          )}
+        </div>
         <TooltipPrimitive.Arrow className="bg-foreground fill-foreground z-50 size-2.5 translate-y-[calc(-50%-2px)] rotate-45 rounded-[2px]" />
       </TooltipPrimitive.Content>
     </TooltipPrimitive.Portal>
