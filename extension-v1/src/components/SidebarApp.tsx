@@ -45,7 +45,7 @@ export function SidebarAppContent() {
 
   return (
     <div
-      className={`border-border bg-background/40 mb-4 overflow-hidden rounded-2xl border shadow-xl backdrop-blur-xl transition-all duration-300 ${resolvedTheme === "dark" ? "dark" : ""}`}
+      className={`border-border bg-background mb-4 overflow-hidden rounded-2xl border shadow-xl transition-all duration-300 ${resolvedTheme === "dark" ? "dark" : ""}`}
     >
       <Accordion
         type="single"
@@ -63,9 +63,9 @@ export function SidebarAppContent() {
         className="w-full"
       >
         <AccordionItem value="item-1" className="border-none">
-          <AccordionTrigger className="hover:bg-accent/20 rounded-t-2xl px-4 py-3 transition-colors hover:no-underline">
+          <AccordionTrigger className="hover:bg-accent rounded-t-2xl px-4 py-3 transition-colors hover:no-underline">
             <div className="flex items-center gap-2">
-              <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-sm font-bold text-transparent">
+              <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
                 VideoNotes
               </h1>
             </div>

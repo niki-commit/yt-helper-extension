@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Plus, Clock, Trash2, Edit2 } from "lucide-react";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { useAutoPause } from "@/hooks/useAutoPause";
@@ -8,7 +8,7 @@ import { useNotes } from "@/hooks/useNotes";
 import { useVideoMetadata } from "@/hooks/useVideoMetadata";
 import { useNoteStore } from "@/storage/noteStore";
 import { Note } from "@/types/schema";
-import { cn, formatTime } from "@/lib/utils";
+import { formatTime } from "@/lib/utils";
 import {
   ShadowTooltip,
   ShadowTooltipContent,
@@ -159,7 +159,7 @@ export function NoteWorkspace({
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             {activeNoteTimestamp !== null ? (
-              <div className="bg-primary/10 text-primary border-primary/20 flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium">
+              <div className="bg-primary/10 text-primary border-primary/70 flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium">
                 <Clock className="h-3.5 w-3.5" />
                 <span>{formatTime(activeNoteTimestamp)}</span>
                 <ShadowTooltip>
@@ -194,7 +194,7 @@ export function NoteWorkspace({
                     className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95 ${
                       isAdActive
                         ? "cursor-not-allowed border-gray-300 opacity-50"
-                        : "hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
+                        : "bg-accent/40 hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
                     }`}
                   >
                     <Clock className="h-3.5 w-3.5" />
@@ -239,7 +239,7 @@ export function NoteWorkspace({
               }}
               className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
             >
-              {activeNoteId ? "Cancel Edit" : "Clear Draft"}
+              {!activeNoteId && "Clear Draft"}
             </button>
             <span className="text-muted-foreground text-[10px]">
               {isAdActive
@@ -298,7 +298,7 @@ export function NoteWorkspace({
 
       {/* Note History / Timeline */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <h3 className="mb-4 text-xs font-bold tracking-wider text-zinc-500 uppercase">
+        <h3 className="text-foreground mb-4 text-xs font-bold tracking-wider uppercase">
           Your Notes for this video
         </h3>
 
@@ -399,13 +399,13 @@ export function NoteWorkspace({
               </div>
             ))
           ) : (
-            <div className="border-border/60 bg-muted/20 flex flex-1 flex-col items-center justify-center rounded-2xl border border-dashed p-8 text-center opacity-40">
+            <div className="border-border bg-muted/50 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center">
               <div className="space-y-3">
                 <Plus className="text-muted-foreground mx-auto h-8 w-8" />
-                <p className="text-muted-foreground text-sm font-medium">
+                <p className="text-muted-foreground text-lg font-medium">
                   No notes yet
                 </p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
+                <p className="text-muted-foreground text-sm leading-relaxed">
                   Start typing above to capture your first thought for this
                   video.
                 </p>

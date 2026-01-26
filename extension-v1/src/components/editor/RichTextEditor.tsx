@@ -84,7 +84,9 @@ function MenuBar({ editor }: { editor: Editor }) {
       <button
         onClick={() => editor.chain().focus().toggleBold().run()}
         className={`hover:bg-accent rounded p-2 transition-colors ${
-          editor.isActive("bold") ? "bg-accent text-accent-foreground" : ""
+          editor.isActive("bold")
+            ? "bg-accent border-accent-foreground text-accent-foreground rounded border"
+            : "text-accent-foreground"
         }`}
         type="button"
       >
@@ -93,7 +95,9 @@ function MenuBar({ editor }: { editor: Editor }) {
       <button
         onClick={() => editor.chain().focus().toggleItalic().run()}
         className={`hover:bg-accent rounded p-2 transition-colors ${
-          editor.isActive("italic") ? "bg-accent text-accent-foreground" : ""
+          editor.isActive("italic")
+            ? "bg-accent border-accent-foreground text-accent-foreground rounded border"
+            : "text-accent-foreground"
         }`}
         type="button"
       >
@@ -103,8 +107,8 @@ function MenuBar({ editor }: { editor: Editor }) {
         onClick={() => editor.chain().focus().toggleBulletList().run()}
         className={`hover:bg-accent rounded p-2 transition-colors ${
           editor.isActive("bulletList")
-            ? "bg-accent text-accent-foreground"
-            : ""
+            ? "bg-accent border-accent-foreground text-accent-foreground rounded border"
+            : "text-accent-foreground"
         }`}
         type="button"
       >
@@ -113,7 +117,9 @@ function MenuBar({ editor }: { editor: Editor }) {
       <button
         onClick={() => editor.chain().focus().toggleCodeBlock().run()}
         className={`hover:bg-accent rounded p-2 transition-colors ${
-          editor.isActive("codeBlock") ? "bg-accent text-accent-foreground" : ""
+          editor.isActive("codeBlock")
+            ? "bg-accent border-accent-foreground text-accent-foreground rounded border"
+            : "text-accent-foreground"
         }`}
         type="button"
       >

@@ -161,7 +161,7 @@ export function FloatingApp() {
               setInitialTimestamp(null);
               setFocusNote(false);
             }}
-            className="text-muted-foreground hover:bg-accent hover:text-accent-foreground rounded-full p-1 transition-colors"
+            className="hover:bg-accent text-accent-foreground rounded-full p-1 transition-colors"
           >
             <X className="h-5 w-5" />
           </button>
@@ -181,10 +181,10 @@ export function FloatingApp() {
         {/* Resize Handle */}
         <div
           onMouseDown={handleResizeStart}
-          className="absolute right-0 bottom-0 h-6 w-6 cursor-nwse-resize rounded-br-2xl transition-colors hover:bg-white/10"
+          className="absolute right-0 bottom-0 h-8 w-8 cursor-nwse-resize rounded-br-2xl transition-colors hover:bg-white/10"
           title="Resize"
         >
-          <div className="border-muted-foreground absolute right-1 bottom-1 h-3 w-3 border-r-2 border-b-2 opacity-50" />
+          <div className="border-accent-foreground absolute right-1 bottom-1 h-5 w-5 border-r-2 border-b-2" />
         </div>
       </div>
     </Providers>
