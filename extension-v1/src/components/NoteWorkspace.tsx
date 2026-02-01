@@ -1,5 +1,5 @@
-import { useEffect } from "react";
-import { Plus, Clock, Trash2, Edit2 } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Plus, Clock, Trash2, Edit2, Search, X } from "lucide-react";
 import { RichTextEditor } from "@/components/editor/RichTextEditor";
 import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAdState } from "@/hooks/useAdState";
@@ -26,6 +26,7 @@ export function NoteWorkspace({
   onSaveComplete,
   focusNote,
 }: NoteWorkspaceProps) {
+  const [searchQuery, setSearchQuery] = useState("");
   const { isAutoPauseEnabled } = useAutoPause();
 
   // Zustand for Cross-UI Sync
@@ -49,6 +50,43 @@ export function NoteWorkspace({
 
   // Ensure video metadata is saved
   useVideoMetadata(videoId);
+
+  // Helper to extract plain text from Tiptap JSON
+  const extractTextFromJson = (json: any): string => {
+    if (!json) return "";
+    if (typeof json === "string") return json;
+    let text = "";
+    if (json.text) {
+      text += json.text;
+    }
+    if (json.content && Array.isArray(json.content)) {
+      json.content.forEach((child: any) => {
+        text += " " + extractTextFromJson(child);
+      });
+    }
+    return text;
+  };
+
+  // Filtered notes based on search query
+  const filteredNotes = useMemo(() => {
+    if (!searchQuery.trim()) return notes;
+
+    const query = searchQuery.toLowerCase().trim();
+    return notes.filter((note: Note) => {
+      // 1. Check content
+      const contentText = extractTextFromJson(note.content).toLowerCase();
+      if (contentText.includes(query)) return true;
+
+      // 2. Check timestamp (formatted and raw)
+      if (note.timestamp !== undefined) {
+        const formattedTime = formatTime(note.timestamp).toLowerCase();
+        if (formattedTime.includes(query)) return true;
+        if (note.timestamp.toString().includes(query)) return true;
+      }
+
+      return false;
+    });
+  }, [notes, searchQuery]);
 
   // Focus Handlers
   const onEditorFocus = () => {
@@ -298,13 +336,33 @@ export function NoteWorkspace({
 
       {/* Note History / Timeline */}
       <div className="flex flex-1 flex-col overflow-hidden">
-        <h3 className="text-foreground mb-4 text-xs font-bold tracking-wider uppercase">
-          Your Notes for this video
-        </h3>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-foreground text-xs font-bold tracking-wider uppercase">
+            Your Notes
+          </h3>
+          <div className="relative max-w-[180px] flex-1">
+            <Search className="text-muted-foreground absolute top-1.5 left-2 h-3.5 w-3.5" />
+            <input
+              type="text"
+              placeholder="Search notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="border-border bg-card/50 placeholder:text-muted-foreground focus:border-primary w-full rounded-md border py-1 pr-7 pl-7 text-[11px] transition-all outline-none"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-muted-foreground hover:text-foreground absolute top-1.5 right-1.5"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto pr-2 pb-4">
-          {notes.length > 0 ? (
-            notes.map((note: Note) => (
+          {filteredNotes.length > 0 ? (
+            filteredNotes.map((note: Note) => (
               <div
                 key={note.id}
                 className={`bg-card group border-border relative rounded-xl border p-3 shadow-xs transition-all ${
@@ -398,6 +456,21 @@ export function NoteWorkspace({
                 />
               </div>
             ))
+          ) : notes.length > 0 ? (
+            <div className="flex h-32 flex-col items-center justify-center text-center">
+              <div className="bg-muted mb-2 flex h-10 w-10 items-center justify-center rounded-full">
+                <Search className="text-muted-foreground h-5 w-5" />
+              </div>
+              <p className="text-accent-foreground text-xs font-medium">
+                No notes match "{searchQuery}"
+              </p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="text-primary mt-2 text-[10px] font-bold uppercase hover:underline"
+              >
+                Clear Search
+              </button>
+            </div>
           ) : (
             <div className="border-border bg-muted/50 flex flex-1 flex-col items-center justify-center rounded-xl border border-dashed p-8 text-center">
               <div className="space-y-3">

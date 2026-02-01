@@ -1,17 +1,17 @@
 import Dexie, { type Table } from "dexie";
-import { Note, VideoMetadata, Folder } from "@/types/schema";
+import { Note, VideoMetadata, Folder, Bookmark } from "@/types/schema";
 
 export class VideoNotesDB extends Dexie {
   notes!: Table<Note>;
   videos!: Table<VideoMetadata>;
   folders!: Table<Folder>;
   settings!: Table<{ id: string; value: any }>;
-  bookmarks!: Table<{ videoId: string; timestamp: number; createdAt: number }>;
+  bookmarks!: Table<Bookmark>;
 
   constructor() {
     super("VideoNotesDB");
 
-    this.version(3).stores({
+    this.version(4).stores({
       // Primary keys and indexes
       notes: "id, video_id, folder_id, last_modified_at, is_dirty, is_deleted",
       videos: "id, last_opened_at",

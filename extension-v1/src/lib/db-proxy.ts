@@ -84,7 +84,11 @@ export const dbProxy = {
           payload: { videoId },
         });
       }
-      return await db.bookmarks.where("videoId").equals(videoId).toArray();
+      return await db.bookmarks
+        .where("videoId")
+        .equals(videoId)
+        .filter((b) => !b.isDeleted)
+        .toArray();
     },
     async getAll() {
       if (isContentScript) {
@@ -92,7 +96,7 @@ export const dbProxy = {
           type: MSG.GET_ALL_BOOKMARKS,
         });
       }
-      return await db.bookmarks.toArray();
+      return await db.bookmarks.filter((b) => !b.isDeleted).toArray();
     },
     async save(bookmark: any) {
       if (isContentScript) {
@@ -101,7 +105,14 @@ export const dbProxy = {
           payload: { bookmark },
         });
       }
-      return await db.bookmarks.put(bookmark);
+      const now = Date.now();
+      const bookmarkWithSync = {
+        ...bookmark,
+        lastModifiedAt: now,
+        isDirty: true,
+        isDeleted: false,
+      };
+      return await db.bookmarks.put(bookmarkWithSync);
     },
     async delete(videoId: string) {
       if (isContentScript) {
@@ -110,7 +121,12 @@ export const dbProxy = {
           payload: { videoId },
         });
       }
-      return await db.bookmarks.delete(videoId);
+      // Soft delete
+      return await db.bookmarks.update(videoId, {
+        isDeleted: true,
+        isDirty: true,
+        lastModifiedAt: Date.now(),
+      });
     },
   },
   videos: {

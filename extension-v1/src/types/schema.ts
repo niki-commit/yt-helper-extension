@@ -57,6 +57,9 @@ export const BookmarkSchema = z.object({
   videoId: z.string(), // YouTube video ID (unique per bookmark record)
   timestamp: z.number(), // In seconds
   createdAt: z.number(), // Unix timestamp (ms)
+  lastModifiedAt: z.number(), // Unix timestamp (ms)
+  isDirty: z.boolean().default(false), // For cloud sync
+  isDeleted: z.boolean().default(false), // For soft delete
 });
 
 export type Bookmark = z.infer<typeof BookmarkSchema>;

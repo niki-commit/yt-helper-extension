@@ -55,10 +55,11 @@ export default defineBackground(() => {
 
             // --- BOOKMARKS ---
             case messages.GET_BOOKMARKS:
-              // Return bookmarks for a specific video
+              // Return bookmarks for a specific video (filter deleted)
               return await db.bookmarks
                 .where("videoId")
                 .equals(message.payload.videoId)
+                .filter((b) => !b.isDeleted)
                 .toArray();
 
             case messages.SAVE_BOOKMARK:
@@ -66,11 +67,16 @@ export default defineBackground(() => {
               return { success: true };
 
             case messages.DELETE_BOOKMARK:
-              await db.bookmarks.delete(message.payload.videoId);
+              // Soft delete
+              await db.bookmarks.update(message.payload.videoId, {
+                isDeleted: true,
+                isDirty: true,
+                lastModifiedAt: Date.now(),
+              });
               return { success: true };
 
             case messages.GET_ALL_BOOKMARKS:
-              return await db.bookmarks.toArray();
+              return await db.bookmarks.filter((b) => !b.isDeleted).toArray();
 
             // --- VIDEO METADATA ---
             case messages.SAVE_VIDEO_METADATA:

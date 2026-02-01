@@ -18,10 +18,14 @@ export function useBookmarks(videoId: string | null) {
   const saveBookmark = useMutation({
     mutationFn: async (timestamp: number) => {
       if (!videoId) return;
+      const now = Date.now();
       const newBookmark: Bookmark = {
         videoId,
         timestamp,
-        createdAt: Date.now(),
+        createdAt: now,
+        lastModifiedAt: now,
+        isDirty: true,
+        isDeleted: false,
       };
       await dbProxy.bookmarks.save(newBookmark);
       return newBookmark;
