@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 
-export function useYouTubePlayer() {
+export interface PlayerOptions {
+  isDashboard?: boolean;
+  videoId?: string | null;
+}
+
+export function useYouTubePlayer(options: PlayerOptions = {}) {
+  const { isDashboard, videoId } = options;
   const [videoElement, setVideoElement] = useState<HTMLVideoElement | null>(
     null
   );
@@ -23,25 +29,42 @@ export function useYouTubePlayer() {
   }, []);
 
   const play = useCallback(() => {
+    if (isDashboard) {
+      window.postMessage({ type: "YT_PLAY" }, "*");
+      return;
+    }
     videoElement?.play();
-  }, [videoElement]);
+  }, [videoElement, isDashboard]);
 
   const pause = useCallback(() => {
+    if (isDashboard) {
+      window.postMessage({ type: "YT_PAUSE" }, "*");
+      return;
+    }
     videoElement?.pause();
-  }, [videoElement]);
+  }, [videoElement, isDashboard]);
 
   const seekTo = useCallback(
     (seconds: number) => {
+      if (isDashboard) {
+        window.postMessage({ type: "SEEK_TO", seconds }, "*");
+        return;
+      }
       if (videoElement) {
         videoElement.currentTime = seconds;
       }
     },
-    [videoElement]
+    [videoElement, isDashboard]
   );
 
   const getCurrentTime = useCallback(() => {
+    if (isDashboard) {
+      // In Dashboard, we'll need another way to fetch time if needed,
+      // but for "Review Mode", we mostly jump TO notes.
+      return 0;
+    }
     return videoElement?.currentTime || 0;
-  }, [videoElement]);
+  }, [videoElement, isDashboard]);
 
   return {
     videoElement,

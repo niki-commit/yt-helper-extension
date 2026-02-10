@@ -47,7 +47,7 @@ export default defineContentScript({
       createShadowRootUi(ctx, {
         name: "vn-sidebar-desktop",
         position: "inline",
-        anchor: "#secondary", // Anchor to the parent container
+        anchor: "#secondary-inner", // Anchor to the parent container
         append: "first", // Append as the very first child
         onMount: (container: HTMLElement) => {
           container.style.backgroundColor = "transparent";

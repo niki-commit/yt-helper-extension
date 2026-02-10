@@ -8,7 +8,7 @@ import {
 import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { useTheme } from "@/hooks/useTheme";
 import { Providers } from "@/components/Providers";
-import { useVideoMetadataSync } from "@/hooks/useVideoMetadataSync";
+import { useVideoMetadata } from "@/hooks/useVideoMetadata";
 
 export function SidebarAppContent() {
   const [value, setValue] = useState<string>("");
@@ -16,8 +16,10 @@ export function SidebarAppContent() {
   const [focusNote, setFocusNote] = useState<boolean>(false);
   const { resolvedTheme } = useTheme();
 
-  // Sync Video Metadata to DB
-  useVideoMetadataSync();
+  const videoId = new URLSearchParams(window.location.search).get("v");
+
+  // Sync Video Metadata to DB (Unified Hook)
+  useVideoMetadata(videoId);
 
   useEffect(() => {
     const handleOpen = (e: any) => {

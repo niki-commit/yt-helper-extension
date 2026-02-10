@@ -19,12 +19,16 @@ interface NoteWorkspaceProps {
   initialTimestamp?: number | null;
   onSaveComplete?: () => void;
   focusNote?: boolean;
+  videoId?: string | null;
+  isDashboard?: boolean;
 }
 
 export function NoteWorkspace({
   initialTimestamp,
   onSaveComplete,
   focusNote,
+  videoId: propVideoId,
+  isDashboard = false,
 }: NoteWorkspaceProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const { isAutoPauseEnabled } = useAutoPause();
@@ -39,11 +43,15 @@ export function NoteWorkspace({
     setActiveNoteTimestamp,
   } = useNoteStore();
 
-  const { getCurrentTime, seekTo, play, pause } = useYouTubePlayer();
+  const { getCurrentTime, seekTo, play, pause } = useYouTubePlayer({
+    isDashboard,
+    videoId: propVideoId,
+  });
   const { isAdActive } = useAdState();
 
-  // Get current video ID
-  const videoId = new URLSearchParams(window.location.search).get("v");
+  // Get current video ID - fallback to URL if not provided via prop
+  const videoId =
+    propVideoId || new URLSearchParams(window.location.search).get("v");
 
   // Database CRUD
   const { notes, saveNote, deleteNote, isSaving } = useNotes(videoId);
@@ -191,148 +199,150 @@ export function NoteWorkspace({
       onKeyDown={(e) => e.stopPropagation()}
       className="flex h-full flex-1 flex-col gap-6 overflow-hidden text-left font-sans"
     >
-      {/* Editor Area */}
-      <div className="space-y-4">
-        {/* Timestamp Badge */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            {activeNoteTimestamp !== null ? (
-              <div className="bg-primary/10 text-primary border-primary/70 flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium">
-                <Clock className="h-3.5 w-3.5" />
-                <span>{formatTime(activeNoteTimestamp)}</span>
+      {/* Editor Area - Only show if NOT in dashboard OR if actively editing a note */}
+      {(!isDashboard || activeNoteId) && (
+        <div className="space-y-4">
+          {/* Timestamp Badge */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              {activeNoteTimestamp !== null ? (
+                <div className="bg-primary/10 text-primary border-primary/70 flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm font-medium">
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>{formatTime(activeNoteTimestamp)}</span>
+                  <ShadowTooltip>
+                    <ShadowTooltipTrigger asChild>
+                      <button
+                        onClick={() => setActiveNoteTimestamp(null)}
+                        className="hover:bg-primary/20 ml-1 rounded-full p-0.5 transition-colors"
+                      >
+                        <Plus className="h-3.5 w-3.5 rotate-45" />
+                      </button>
+                    </ShadowTooltipTrigger>
+                    <ShadowTooltipContent side="top">
+                      <p>Clear timestamp</p>
+                    </ShadowTooltipContent>
+                  </ShadowTooltip>
+                </div>
+              ) : (
+                <div className="bg-muted/50 text-muted-foreground flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm">
+                  <span>General Note</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Capture Button (only show if no timestamp AND not in dashboard) */}
+              {activeNoteTimestamp === null && !isDashboard && (
                 <ShadowTooltip>
                   <ShadowTooltipTrigger asChild>
                     <button
-                      onClick={() => setActiveNoteTimestamp(null)}
-                      className="hover:bg-primary/20 ml-1 rounded-full p-0.5 transition-colors"
+                      onClick={handleCaptureTimestamp}
+                      disabled={isAdActive}
+                      className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95 ${
+                        isAdActive
+                          ? "cursor-not-allowed border-gray-300 opacity-50"
+                          : "bg-accent/40 hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
+                      }`}
                     >
-                      <Plus className="h-3.5 w-3.5 rotate-45" />
+                      <Clock className="h-3.5 w-3.5" />
+                      <span>Stamp</span>
                     </button>
                   </ShadowTooltipTrigger>
                   <ShadowTooltipContent side="top">
-                    <p>Clear timestamp</p>
+                    <p>
+                      {isAdActive
+                        ? "Cannot capture during ads"
+                        : "Capture current timestamp"}
+                    </p>
                   </ShadowTooltipContent>
                 </ShadowTooltip>
-              </div>
-            ) : (
-              <div className="bg-muted/50 text-muted-foreground flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm">
-                <span>General Note</span>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {/* Capture Button (only show if no timestamp) */}
-            {activeNoteTimestamp === null && (
-              <ShadowTooltip>
-                <ShadowTooltipTrigger asChild>
-                  <button
-                    onClick={handleCaptureTimestamp}
-                    disabled={isAdActive}
-                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition-all active:scale-95 ${
-                      isAdActive
-                        ? "cursor-not-allowed border-gray-300 opacity-50"
-                        : "bg-accent/40 hover:bg-accent/50 text-muted-foreground hover:text-foreground border-border"
-                    }`}
-                  >
-                    <Clock className="h-3.5 w-3.5" />
-                    <span>Stamp</span>
-                  </button>
-                </ShadowTooltipTrigger>
-                <ShadowTooltipContent side="top">
-                  <p>
-                    {isAdActive
-                      ? "Cannot capture during ads"
-                      : "Capture current timestamp"}
-                  </p>
-                </ShadowTooltipContent>
-              </ShadowTooltip>
-            )}
+          <div className="space-y-2">
+            <RichTextEditor
+              content={currentEditorContent || ""}
+              onChange={setCurrentEditorContent}
+              onFocus={onEditorFocus}
+              onBlur={onEditorBlur}
+              placeholder="Take a note..."
+              // CRITICAL: Only autofocus if we were explicitly opened with a timestamp (via Note chip)
+              // or if we are actively editing a note. This prevents "Focus Ghost" on expansion.
+              autofocus={
+                (initialTimestamp !== null && initialTimestamp !== undefined) ||
+                activeNoteId ||
+                focusNote
+                  ? "end"
+                  : false
+              }
+            />
+            <div className="flex items-center justify-between px-1">
+              <button
+                onClick={() => {
+                  setActiveNoteId(null);
+                  setCurrentEditorContent("");
+                  setActiveNoteTimestamp(null);
+                }}
+                className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
+              >
+                {!activeNoteId && "Clear Draft"}
+              </button>
+              <span className="text-muted-foreground text-[10px]">
+                {isAdActive
+                  ? "Note taking disabled during ad"
+                  : isAutoPauseEnabled
+                    ? "Auto-Pause Active"
+                    : ""}
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div className="space-y-2">
-          <RichTextEditor
-            content={currentEditorContent || ""}
-            onChange={setCurrentEditorContent}
-            onFocus={onEditorFocus}
-            onBlur={onEditorBlur}
-            placeholder="Take a note..."
-            // CRITICAL: Only autofocus if we were explicitly opened with a timestamp (via Note chip)
-            // or if we are actively editing a note. This prevents "Focus Ghost" on expansion.
-            autofocus={
-              (initialTimestamp !== null && initialTimestamp !== undefined) ||
-              activeNoteId ||
-              focusNote
-                ? "end"
-                : false
-            }
-          />
-          <div className="flex items-center justify-between px-1">
+          <div className="flex gap-2">
+            {activeNoteId && (
+              <button
+                onClick={() => {
+                  setActiveNoteId(null);
+                  setCurrentEditorContent("");
+                  setActiveNoteTimestamp(null);
+                }}
+                className="border-border hover:bg-accent text-foreground flex-1 rounded-lg border py-2.5 text-sm font-bold transition-all active:scale-95"
+              >
+                Cancel
+              </button>
+            )}
             <button
-              onClick={() => {
-                setActiveNoteId(null);
-                setCurrentEditorContent("");
-                setActiveNoteTimestamp(null);
-              }}
-              className="text-muted-foreground hover:text-foreground text-[10px] transition-colors"
+              onClick={handleSaveAndResume}
+              disabled={
+                isAdActive ||
+                !currentEditorContent ||
+                isContentEmpty(currentEditorContent) ||
+                isSaving
+              }
+              className={`group flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold shadow-lg transition-all active:scale-95 ${
+                activeNoteId ? "flex-2" : "w-full"
+              } ${
+                isAdActive ||
+                !currentEditorContent ||
+                isContentEmpty(currentEditorContent) ||
+                isSaving
+                  ? "cursor-not-allowed bg-gray-400 text-gray-200 opacity-50"
+                  : "bg-primary hover:bg-primary/90 text-primary-foreground hover:cursor-pointer"
+              }`}
             >
-              {!activeNoteId && "Clear Draft"}
+              {isSaving ? (
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              ) : isAdActive ? (
+                "Waiting for Ad..."
+              ) : activeNoteId ? (
+                "Update Note"
+              ) : (
+                "Save Note & Resume"
+              )}
             </button>
-            <span className="text-muted-foreground text-[10px]">
-              {isAdActive
-                ? "Note taking disabled during ad"
-                : isAutoPauseEnabled
-                  ? "Auto-Pause Active"
-                  : ""}
-            </span>
           </div>
         </div>
-
-        <div className="flex gap-2">
-          {activeNoteId && (
-            <button
-              onClick={() => {
-                setActiveNoteId(null);
-                setCurrentEditorContent("");
-                setActiveNoteTimestamp(null);
-              }}
-              className="border-border hover:bg-accent text-foreground flex-1 rounded-lg border py-2.5 text-sm font-bold transition-all active:scale-95"
-            >
-              Cancel
-            </button>
-          )}
-          <button
-            onClick={handleSaveAndResume}
-            disabled={
-              isAdActive ||
-              !currentEditorContent ||
-              isContentEmpty(currentEditorContent) ||
-              isSaving
-            }
-            className={`group flex items-center justify-center gap-2 rounded-lg py-2.5 text-sm font-bold shadow-lg transition-all active:scale-95 ${
-              activeNoteId ? "flex-2" : "w-full"
-            } ${
-              isAdActive ||
-              !currentEditorContent ||
-              isContentEmpty(currentEditorContent) ||
-              isSaving
-                ? "cursor-not-allowed bg-gray-400 text-gray-200 opacity-50"
-                : "bg-primary hover:bg-primary/90 text-primary-foreground hover:cursor-pointer"
-            }`}
-          >
-            {isSaving ? (
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-            ) : isAdActive ? (
-              "Waiting for Ad..."
-            ) : activeNoteId ? (
-              "Update Note"
-            ) : (
-              "Save Note & Resume"
-            )}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* Note History / Timeline */}
       <div className="flex flex-1 flex-col overflow-hidden">
@@ -479,8 +489,9 @@ export function NoteWorkspace({
                   No notes yet
                 </p>
                 <p className="text-muted-foreground text-sm leading-relaxed">
-                  Start typing above to capture your first thought for this
-                  video.
+                  {isDashboard
+                    ? "Open this video on YouTube to start capturing notes!"
+                    : "Start typing above to capture your first thought for this video."}
                 </p>
               </div>
             </div>

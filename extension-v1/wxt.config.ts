@@ -5,12 +5,19 @@ import path from "path";
 // See https://wxt.dev/api/config.html
 export default defineConfig({
   srcDir: "src",
-  modules: ["@wxt-dev/module-react"],
+  modules: ["@wxt-dev/module-react", "@wxt-dev/auto-icons"],
+  autoIcons: {
+    baseIconPath: "assets/icon.svg",
+  },
   manifest: {
-    name: "VideoNotes",
-    description: "Distraction-free YouTube learning with timestamped notes",
+    name: "VideoNotes: Take Notes, Bookmark, and Learn Distraction-Free on YouTube",
+    description:
+      "Enhance your learning on YouTube with timestamped notes and bookmarks, and stay focused by hiding distractions. Includes a beautiful dashboard to manage your entire video library locally",
+    action: {
+      default_title: "VideoNotes Settings and Dashboard",
+    },
     permissions: ["storage", "tabs"],
-    host_permissions: ["https://*.supabase.co/*", "http://localhost:3000/*"],
+    // host_permissions: ["https://*.supabase.co/*", "http://localhost:3000/*"],
   },
   vite: () => ({
     plugins: [tailwindcss()],

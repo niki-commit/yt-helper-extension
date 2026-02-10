@@ -15,12 +15,14 @@ import {
   Sun,
   Moon,
   Monitor,
+  LayoutDashboard,
 } from "lucide-react";
 import { useTheme, type Theme } from "@/hooks/useTheme";
 import { useHideRecommendations } from "@/hooks/useHideRecommendations";
 import { useHideComments } from "@/hooks/useHideComments";
 import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAutoResume } from "@/hooks/useAutoResume";
+import { getThumbnailUrl } from "@/lib/thumbnail-utils";
 
 import { useAllNotes } from "@/hooks/useAllNotes";
 import { useAllBookmarks } from "@/hooks/useAllBookmarks";
@@ -52,14 +54,32 @@ function App() {
 
   return (
     <div className="bg-background text-foreground flex h-[450px] w-[350px] flex-col font-sans">
-      {/* Header */}
-      <div className="border-border bg-card/50 border-b p-4 backdrop-blur-sm">
-        <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
-          VideoNotes
-        </h1>
-        <p className="text-muted-foreground text-xs">
-          Your Personal Learning Companion
-        </p>
+      <div className="border-border bg-card/50 flex items-center justify-between border-b p-4 backdrop-blur-sm">
+        <div>
+          <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
+            VideoNotes
+          </h1>
+          <p className="text-muted-foreground text-xs">
+            Your Personal Learning Companion
+          </p>
+        </div>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              onClick={() => {
+                browser.tabs.create({
+                  url: browser.runtime.getURL("dashboard.html" as any),
+                });
+              }}
+              className="hover:bg-accent hover:text-accent-foreground text-muted-foreground flex h-9 w-9 items-center justify-center rounded-md transition-colors"
+            >
+              <LayoutDashboard className="h-5 w-5" />
+            </button>
+          </TooltipTrigger>
+          <TooltipContent side="bottom">
+            <p>Open Dashboard</p>
+          </TooltipContent>
+        </Tooltip>
       </div>
 
       <Tabs
@@ -145,30 +165,24 @@ function App() {
                   }
                 >
                   {/* Thumbnail / Icon */}
-                  <div className="bg-muted shrink-0 overflow-hidden rounded-md">
+                  <div className="bg-muted aspect-video w-20 shrink-0 overflow-hidden rounded-md">
                     {group.thumbnail_url ? (
                       <img
-                        src={group.thumbnail_url}
+                        src={getThumbnailUrl(group.thumbnail_url)}
                         alt=""
-                        className="h-10 w-16 object-cover"
+                        className="h-full w-full object-cover"
                         onError={(e) => {
+                          // Fallback to icon if image fails to load
                           const img = e.currentTarget;
-                          // Try fallback to medium quality if HQ fails
-                          if (
-                            img.src.includes("hqdefault.jpg") &&
-                            group.video_id
-                          ) {
-                            img.src = `https://i.ytimg.com/vi/${group.video_id}/mqdefault.jpg`;
-                          } else {
-                            // Final fallback to icon
-                            img.style.display = "none";
-                            img.nextElementSibling?.classList.remove("hidden");
-                          }
+                          img.style.display = "none";
+                          img.parentElement
+                            ?.querySelector(".fallback-icon")
+                            ?.classList.remove("hidden");
                         }}
                       />
                     ) : null}
                     <div
-                      className={`flex h-10 w-16 items-center justify-center ${
+                      className={`fallback-icon flex h-full w-full items-center justify-center ${
                         group.thumbnail_url ? "hidden" : ""
                       }`}
                     >
@@ -246,30 +260,24 @@ function App() {
                   }
                 >
                   {/* Thumbnail / Icon */}
-                  <div className="bg-muted shrink-0 overflow-hidden rounded-md">
+                  <div className="bg-muted aspect-video w-20 shrink-0 overflow-hidden rounded-md">
                     {bookmark.thumbnail_url ? (
                       <img
-                        src={bookmark.thumbnail_url}
+                        src={getThumbnailUrl(bookmark.thumbnail_url)}
                         alt=""
-                        className="h-10 w-16 object-cover"
+                        className="h-full w-full object-cover"
                         onError={(e) => {
+                          // Fallback to icon if image fails to load
                           const img = e.currentTarget;
-                          // Try fallback to medium quality if HQ fails
-                          if (
-                            img.src.includes("hqdefault.jpg") &&
-                            bookmark.videoId
-                          ) {
-                            img.src = `https://i.ytimg.com/vi/${bookmark.videoId}/mqdefault.jpg`;
-                          } else {
-                            // Final fallback to icon
-                            img.style.display = "none";
-                            img.nextElementSibling?.classList.remove("hidden");
-                          }
+                          img.style.display = "none";
+                          img.parentElement
+                            ?.querySelector(".fallback-icon")
+                            ?.classList.remove("hidden");
                         }}
                       />
                     ) : null}
                     <div
-                      className={`flex h-10 w-16 items-center justify-center ${
+                      className={`fallback-icon flex h-full w-full items-center justify-center ${
                         bookmark.thumbnail_url ? "hidden" : ""
                       }`}
                     >

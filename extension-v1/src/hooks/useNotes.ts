@@ -2,9 +2,32 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { dbProxy } from "@/lib/db-proxy";
 import { Note } from "@/types/schema";
 import { v4 as uuidv4 } from "uuid";
+import { syncEngine } from "@/lib/sync-engine";
+import { useEffect } from "react";
+import { useVideoMetadata } from "./useVideoMetadata";
 
 export function useNotes(videoId: string | null) {
   const queryClient = useQueryClient();
+  const { refreshMetadata } = useVideoMetadata(videoId);
+
+  // Subscribe to sync events
+  useEffect(() => {
+    if (!videoId) return;
+
+    console.log("[VideoNotes] Subscribing to sync events for video:", videoId);
+    const unsubscribe = syncEngine.subscribe((event) => {
+      if (event.type === "REFRESH_NOTES" && event.videoId === videoId) {
+        console.log(
+          "[VideoNotes] Received remote sync event for notes",
+          videoId
+        );
+        queryClient.invalidateQueries({ queryKey: ["notes", videoId] });
+        queryClient.invalidateQueries({ queryKey: ["all-notes"] });
+      }
+    });
+
+    return unsubscribe;
+  }, [videoId]);
 
   // Fetch all notes for the current video
   const { data: notes = [], isLoading } = useQuery({
@@ -34,9 +57,12 @@ export function useNotes(videoId: string | null) {
         created_at: noteData.created_at || now,
         last_modified_at: now,
         profile_type: "local",
-        is_dirty: true,
-        is_deleted: false,
+        is_dirty: true, // Keep for types/schema, ignored by V1 hard delete
+        is_deleted: false, // Keep for types/schema, ignored by V1 hard delete
       };
+
+      // Ensure metadata is captured right now
+      await refreshMetadata();
 
       await dbProxy.notes.save(note);
       return note;
@@ -44,6 +70,11 @@ export function useNotes(videoId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes", videoId] });
       queryClient.invalidateQueries({ queryKey: ["all-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      // Broadcast change to other tabs
+      if (videoId) {
+        syncEngine.broadcast({ type: "REFRESH_NOTES", videoId });
+      }
     },
   });
 
@@ -55,6 +86,11 @@ export function useNotes(videoId: string | null) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes", videoId] });
       queryClient.invalidateQueries({ queryKey: ["all-notes"] });
+      queryClient.invalidateQueries({ queryKey: ["videos"] });
+      // Broadcast change to other tabs
+      if (videoId) {
+        syncEngine.broadcast({ type: "REFRESH_NOTES", videoId });
+      }
     },
   });
 

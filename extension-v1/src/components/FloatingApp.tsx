@@ -4,7 +4,7 @@ import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { useTheme } from "@/hooks/useTheme";
 import { Providers } from "@/components/Providers";
 
-export function FloatingApp() {
+export function FloatingAppContent() {
   const [isOpen, setIsOpen] = useState(false);
   const [initialTimestamp, setInitialTimestamp] = useState<number | null>(null);
   const [focusNote, setFocusNote] = useState<boolean>(false);
@@ -135,58 +135,64 @@ export function FloatingApp() {
   if (!isOpen) return null;
 
   return (
-    <Providers>
+    <div
+      style={{
+        transform: `translate(${position.x}px, ${position.y}px)`,
+        width: `${size.width}px`,
+        height: `${size.height}px`,
+        position: "fixed",
+        top: 0,
+        left: 0,
+      }}
+      className={`border-border bg-background/40 animate-in fade-in slide-in-from-right-4 pointer-events-auto z-99999 flex flex-col rounded-2xl border p-4 shadow-2xl backdrop-blur-xl transition-[background-color,border-color,opacity,transform] duration-300 ${resolvedTheme === "dark" ? "dark" : ""}`}
+    >
+      {/* Header / Drag Handle */}
       <div
-        style={{
-          transform: `translate(${position.x}px, ${position.y}px)`,
-          width: `${size.width}px`,
-          height: `${size.height}px`,
-          position: "fixed",
-          top: 0,
-          left: 0,
-        }}
-        className={`border-border bg-background/40 animate-in fade-in slide-in-from-right-4 pointer-events-auto z-99999 flex flex-col rounded-2xl border p-4 shadow-2xl backdrop-blur-xl transition-[background-color,border-color,opacity,transform] duration-300 ${resolvedTheme === "dark" ? "dark" : ""}`}
+        onMouseDown={handleDragStart}
+        className="border-border/20 mb-4 flex cursor-move items-center justify-between border-b pb-4 select-none"
       >
-        {/* Header / Drag Handle */}
-        <div
-          onMouseDown={handleDragStart}
-          className="border-border/20 mb-4 flex cursor-move items-center justify-between border-b pb-4 select-none"
-        >
-          <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
-            VideoNotes
-          </h1>
-          <button
-            onClick={() => {
-              setIsOpen(false);
-              setInitialTimestamp(null);
-              setFocusNote(false);
-            }}
-            className="hover:bg-accent text-accent-foreground rounded-full p-1 transition-colors"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        </div>
-
-        {/* Workspace */}
-        <NoteWorkspace
-          initialTimestamp={initialTimestamp}
-          focusNote={focusNote}
-          onSaveComplete={() => {
-            // Keep floating UI open after save for continuous note taking
+        <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
+          VideoNotes
+        </h1>
+        <button
+          onClick={() => {
+            setIsOpen(false);
             setInitialTimestamp(null);
             setFocusNote(false);
           }}
-        />
-
-        {/* Resize Handle */}
-        <div
-          onMouseDown={handleResizeStart}
-          className="absolute right-0 bottom-0 h-8 w-8 cursor-nwse-resize rounded-br-2xl transition-colors hover:bg-white/10"
-          title="Resize"
+          className="hover:bg-accent text-accent-foreground rounded-full p-1 transition-colors"
         >
-          <div className="border-accent-foreground absolute right-1 bottom-1 h-5 w-5 border-r-2 border-b-2" />
-        </div>
+          <X className="h-5 w-5" />
+        </button>
       </div>
+
+      {/* Workspace */}
+      <NoteWorkspace
+        initialTimestamp={initialTimestamp}
+        focusNote={focusNote}
+        onSaveComplete={() => {
+          // Keep floating UI open after save for continuous note taking
+          setInitialTimestamp(null);
+          setFocusNote(false);
+        }}
+      />
+
+      {/* Resize Handle */}
+      <div
+        onMouseDown={handleResizeStart}
+        className="absolute right-0 bottom-0 h-8 w-8 cursor-nwse-resize rounded-br-2xl transition-colors hover:bg-white/10"
+        title="Resize"
+      >
+        <div className="border-accent-foreground absolute right-1 bottom-1 h-5 w-5 border-r-2 border-b-2" />
+      </div>
+    </div>
+  );
+}
+
+export function FloatingApp() {
+  return (
+    <Providers>
+      <FloatingAppContent />
     </Providers>
   );
 }

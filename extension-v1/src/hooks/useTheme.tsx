@@ -1,9 +1,23 @@
-import { useState, useEffect } from "react";
+import {
+  useState,
+  useEffect,
+  createContext,
+  useContext,
+  ReactNode,
+} from "react";
 import { browser } from "wxt/browser";
 
 export type Theme = "system" | "light" | "dark";
 
-export function useTheme() {
+interface ThemeContextType {
+  theme: Theme;
+  resolvedTheme: "light" | "dark";
+  setTheme: (theme: Theme) => void;
+}
+
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+
+export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>("system");
   const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
@@ -14,7 +28,7 @@ export function useTheme() {
     });
   }, []);
 
-  // Listen for storage changes from other contexts (Popup <=> Content Script)
+  // Listen for storage changes from other contexts
   useEffect(() => {
     const handleStorageChange = (changes: any, areaName: string) => {
       if (areaName === "local" && changes.theme) {
@@ -41,7 +55,7 @@ export function useTheme() {
 
       setResolvedTheme(current);
 
-      // Apply to document root for the current context (Popup or Content Script host)
+      // Apply to document root
       if (current === "dark") {
         document.documentElement.classList.add("dark");
       } else {
@@ -51,7 +65,6 @@ export function useTheme() {
 
     resolveAndApply();
 
-    // If item is system, we need to listen for OS changes
     if (theme === "system") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const handleChange = () => resolveAndApply();
@@ -65,5 +78,17 @@ export function useTheme() {
     browser.storage.local.set({ theme: newTheme });
   };
 
-  return { theme, resolvedTheme, setTheme };
+  return (
+    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
+export function useTheme() {
+  const context = useContext(ThemeContext);
+  if (context === undefined) {
+    throw new Error("useTheme must be used within a ThemeProvider");
+  }
+  return context;
 }

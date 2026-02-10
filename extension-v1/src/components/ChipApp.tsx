@@ -11,6 +11,7 @@ import { useTheme } from "@/hooks/useTheme";
 import { useYouTubePlayer } from "@/hooks/useYouTubePlayer";
 import { useAdState } from "@/hooks/useAdState";
 import { useBookmarks } from "@/hooks/useBookmarks";
+import { useVideoMetadata } from "@/hooks/useVideoMetadata";
 import { formatTime } from "@/lib/utils";
 import {
   ShadowTooltip,
@@ -38,6 +39,9 @@ export function ChipApp({ isPlayerControl = false }: ChipAppProps) {
     deleteBookmark,
     isSaving: isBookmarkSaving,
   } = useBookmarks(videoId);
+
+  // Auto-capture metadata
+  useVideoMetadata(videoId);
 
   useEffect(() => {
     if (!isPlayerControl) return;

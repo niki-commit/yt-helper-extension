@@ -1,17 +1,6 @@
 import { db } from "./db";
 import { browser } from "wxt/browser";
 import { messages } from "@/entrypoints/background";
-// Note: We can't import messages from entrypoint in some builds, so we might need to move constants to specific file.
-// For now, let's redefine constants here or create a shared constants file.
-// Actually, let's create a `lib/rpc.ts` to be safe and clean.
-
-// But to save steps, I will implement a check.
-// If we are in the Content Script context, we MUST use sendMessage.
-// If we are in the Popup/Background context, we CAN use db directly (optional, but consistent to always use rpc? No, direct is faster).
-
-// Actually, WXT builds separate bundles. Content script cannot import `db` directly if `db` uses Dexie which relies on IndexedDB.
-// If code uses `db` in Content Script, it uses `youtube.com` IDB.
-// So we need a "Repository" pattern that switches implementation.
 
 export const MSG = {
   GET_NOTES: "GET_NOTES",
@@ -26,8 +15,6 @@ export const MSG = {
   GET_ALL_VIDEOS: "GET_ALL_VIDEOS",
 };
 
-// Check if we are in a content script environment
-// browser.runtime.id is available in both, but window location might differ.
 const isContentScript =
   typeof window !== "undefined" && window.location.protocol.startsWith("http");
 
@@ -43,14 +30,15 @@ export const dbProxy = {
       return await db.notes
         .where("video_id")
         .equals(videoId)
-        .filter((n) => !n.is_deleted)
+        // .filter((n) => !n.is_deleted)
         .toArray();
     },
     async getAll() {
       if (isContentScript) {
         return await browser.runtime.sendMessage({ type: MSG.GET_ALL_NOTES });
       }
-      return await db.notes.filter((n) => !n.is_deleted).toArray();
+      // return await db.notes.filter((n) => !n.is_deleted).toArray();
+      return await db.notes.toArray();
     },
     async save(note: any) {
       if (isContentScript) {
@@ -68,12 +56,41 @@ export const dbProxy = {
           payload: { noteId },
         });
       }
-      // Soft delete
+
+      // 1. Get the video_id before deleting so we can check for orphans later
+      const note = await db.notes.get(noteId);
+      const videoId = note?.video_id;
+
+      /* SOFT DELETE (V2 Cloud Sync Ready)
       return await db.notes.update(noteId, {
         is_deleted: true,
         is_dirty: true,
         last_modified_at: Date.now(),
       });
+      */
+
+      // 2. HARD DELETE (V1 Clean Implementation)
+      await db.notes.delete(noteId);
+
+      // 3. Cleanup Orphan Video Metadata
+      if (videoId) {
+        const remainingNotes = await db.notes
+          .where("video_id")
+          .equals(videoId)
+          .count();
+        const remainingBookmarks = await db.bookmarks
+          .where("videoId")
+          .equals(videoId)
+          .count();
+
+        if (remainingNotes === 0 && remainingBookmarks === 0) {
+          console.log(
+            `[VideoNotes] No remaining content for ${videoId}. Purging metadata.`
+          );
+          await db.videos.delete(videoId);
+        }
+      }
+      return { success: true };
     },
   },
   bookmarks: {
@@ -84,11 +101,10 @@ export const dbProxy = {
           payload: { videoId },
         });
       }
-      return await db.bookmarks
-        .where("videoId")
-        .equals(videoId)
-        .filter((b) => !b.isDeleted)
-        .toArray();
+      const bookmark = await db.bookmarks.get(videoId);
+      // if (bookmark && !bookmark.isDeleted) return bookmark;
+      if (bookmark) return [bookmark]; // Keep array return for compatibility with current hook usage [0]
+      return [];
     },
     async getAll() {
       if (isContentScript) {
@@ -96,7 +112,8 @@ export const dbProxy = {
           type: MSG.GET_ALL_BOOKMARKS,
         });
       }
-      return await db.bookmarks.filter((b) => !b.isDeleted).toArray();
+      // return await db.bookmarks.filter((b) => !b.isDeleted).toArray();
+      return await db.bookmarks.toArray();
     },
     async save(bookmark: any) {
       if (isContentScript) {
@@ -121,12 +138,29 @@ export const dbProxy = {
           payload: { videoId },
         });
       }
-      // Soft delete
+      /* SOFT DELETE (V2 Cloud Sync Ready)
       return await db.bookmarks.update(videoId, {
         isDeleted: true,
         isDirty: true,
         lastModifiedAt: Date.now(),
       });
+      */
+      // 1. HARD DELETE (V1 Clean Implementation)
+      await db.bookmarks.delete(videoId);
+
+      // 2. Cleanup Orphan Video Metadata
+      const remainingNotes = await db.notes
+        .where("video_id")
+        .equals(videoId)
+        .count();
+
+      if (remainingNotes === 0) {
+        console.log(
+          `[VideoNotes] No remaining content for ${videoId}. Purging metadata.`
+        );
+        await db.videos.delete(videoId);
+      }
+      return { success: true };
     },
   },
   videos: {

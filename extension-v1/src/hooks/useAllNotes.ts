@@ -1,7 +1,23 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { dbProxy } from "@/lib/db-proxy";
+import { useEffect } from "react";
+import { syncEngine } from "@/lib/sync-engine";
 
 export function useAllNotes() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const unsubscribe = syncEngine.subscribe((event) => {
+      if (
+        event.type === "REFRESH_NOTES" ||
+        event.type === "REFRESH_BOOKMARKS"
+      ) {
+        queryClient.invalidateQueries({ queryKey: ["all-notes"] });
+      }
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ["all-notes"],
     queryFn: async () => {

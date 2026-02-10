@@ -11,7 +11,7 @@ export class VideoNotesDB extends Dexie {
   constructor() {
     super("VideoNotesDB");
 
-    this.version(4).stores({
+    this.version(1).stores({
       // Primary keys and indexes
       notes: "id, video_id, folder_id, last_modified_at, is_dirty, is_deleted",
       videos: "id, last_opened_at",
