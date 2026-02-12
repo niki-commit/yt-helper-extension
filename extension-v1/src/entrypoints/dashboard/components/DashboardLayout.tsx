@@ -19,6 +19,7 @@ import { LibraryView } from "../views/LibraryView";
 import { BookmarksView } from "../views/BookmarksView";
 import { SettingsView } from "../views/SettingsView";
 import { ReviewMode } from "../views/ReviewMode";
+import { GlobalSearch } from "./GlobalSearch";
 import { Library, Bookmark, Settings, Sparkles, FileText } from "lucide-react";
 
 type View = "library" | "bookmarks" | "settings" | "integrations" | "review";
@@ -30,6 +31,21 @@ export function DashboardLayout() {
   const handleSelectVideo = (videoId: string) => {
     setSelectedVideoId(videoId);
     setActiveView("review");
+  };
+
+  const handleSelectNote = (videoId: string, _noteId: string) => {
+    // Navigate to the video in ReviewMode
+    // Note: Deep-linking to specific note can be added later
+    setSelectedVideoId(videoId);
+    setActiveView("review");
+  };
+
+  const handleSelectBookmark = (videoId: string, _timestamp: number) => {
+    // Open the video on YouTube at the bookmarked timestamp
+    window.open(
+      `https://www.youtube.com/watch?v=${videoId}&t=${Math.floor(_timestamp)}s`,
+      "_blank"
+    );
   };
 
   const navigation = [
@@ -145,11 +161,21 @@ export function DashboardLayout() {
       </Sidebar>
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
-          <Separator orientation="vertical" className="mr-2 h-4" />
-          <h1 className="text-lg font-semibold">
-            {navigation.find((n) => n.view === activeView)?.title}
-          </h1>
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <h1 className="text-lg font-semibold">
+              {navigation.find((n) => n.view === activeView)?.title}
+            </h1>
+          </div>
+          <div className="mx-auto max-w-md flex-1">
+            <GlobalSearch
+              onSelectVideo={handleSelectVideo}
+              onSelectNote={handleSelectNote}
+              onSelectBookmark={handleSelectBookmark}
+            />
+          </div>
+          <div className="w-10" />
         </header>
         <div className="flex flex-1 flex-col gap-4 overflow-auto p-4">
           {renderView()}

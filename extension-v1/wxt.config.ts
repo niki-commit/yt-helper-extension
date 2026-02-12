@@ -11,8 +11,9 @@ export default defineConfig({
   },
   manifest: {
     name: "VideoNotes: Take Notes, Bookmark, and Learn Distraction-Free on YouTube",
+    short_name: "VideoNotes",
     description:
-      "Enhance your learning on YouTube with timestamped notes and bookmarks, and stay focused by hiding distractions. Includes a beautiful dashboard to manage your entire video library locally",
+      "Enhance your learning on YouTube with timestamped notes and bookmarks, and stay focused by hiding distractions.",
     action: {
       default_title: "VideoNotes Settings and Dashboard",
     },
