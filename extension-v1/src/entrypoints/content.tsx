@@ -15,7 +15,7 @@ export default defineContentScript({
   cssInjectionMode: "ui",
 
   async main(ctx) {
-    console.log("[VideoNotes] Content script loaded (SPA Mode)");
+    // console.log("[VideoNotes] Content script loaded (SPA Mode)");
 
     // Initialize Global Settings Logic
     initFocusMode();
@@ -229,7 +229,7 @@ export default defineContentScript({
     const unmountAll = () => {
       stopPolling();
       if (!uiState.isMounted) return;
-      console.log("[VideoNotes] Unmounting all UI.");
+      // console.log("[VideoNotes] Unmounting all UI.");
 
       uiState.sidebarDesktop?.remove();
       uiState.sidebarMobile?.remove();
@@ -253,7 +253,7 @@ export default defineContentScript({
     const mountAll = async () => {
       const videoId = new URLSearchParams(window.location.search).get("v");
       if (!videoId) {
-        console.log("[VideoNotes] No Video ID found. Skipping mount.");
+        // console.log("[VideoNotes] No Video ID found. Skipping mount.");
         return;
       }
 
@@ -267,7 +267,7 @@ export default defineContentScript({
         stopPolling();
       }
 
-      console.log(`[VideoNotes] Starting Mount sequence for: ${videoId}`);
+      // console.log(`[VideoNotes] Starting Mount sequence for: ${videoId}`);
       isMounting = true;
       uiState.currentVideoId = videoId;
       uiState.isMounted = true;
@@ -305,7 +305,7 @@ export default defineContentScript({
         ) {
           uiState.chipOwner?.mount();
           mountedPieces.chipOwner = true;
-          console.log("[VideoNotes] Mounted: Chip (Owner)");
+          // console.log("[VideoNotes] Mounted: Chip (Owner)");
         }
         // Player Chip
         if (
@@ -314,7 +314,7 @@ export default defineContentScript({
         ) {
           uiState.chipPlayer?.mount();
           mountedPieces.chipPlayer = true;
-          console.log("[VideoNotes] Mounted: Chip (Player)");
+          // console.log("[VideoNotes] Mounted: Chip (Player)");
         }
         // Desktop Sidebar (Using inner for stability)
         if (
@@ -323,7 +323,7 @@ export default defineContentScript({
         ) {
           uiState.sidebarDesktop?.mount();
           mountedPieces.sidebarDesktop = true;
-          console.log("[VideoNotes] Mounted: Sidebar (Desktop)");
+          // console.log("[VideoNotes] Mounted: Sidebar (Desktop)");
         }
         // Mobile Sidebar
         if (
@@ -332,13 +332,13 @@ export default defineContentScript({
         ) {
           uiState.sidebarMobile?.mount();
           mountedPieces.sidebarMobile = true;
-          console.log("[VideoNotes] Mounted: Sidebar (Mobile)");
+          // console.log("[VideoNotes] Mounted: Sidebar (Mobile)");
         }
         // Floating UI
         if (!mountedPieces.floating) {
           uiState.floating?.mount();
           mountedPieces.floating = true;
-          console.log("[VideoNotes] Mounted: Floating UI");
+          // console.log("[VideoNotes] Mounted: Floating UI");
         }
 
         // Return true only if EVERYTHING is mounted
@@ -360,10 +360,10 @@ export default defineContentScript({
       }
 
       // 6. Robust Polling with MutationObserver
-      console.log("[VideoNotes] Some anchors missing. Starting observer...");
+      // console.log("[VideoNotes] Some anchors missing. Starting observer...");
       mountObserver = new MutationObserver(() => {
         if (tryMount()) {
-          console.log("[VideoNotes] All UI pieces mounted successfully.");
+          // console.log("[VideoNotes] All UI pieces mounted successfully.");
           stopPolling();
         }
       });
@@ -380,7 +380,7 @@ export default defineContentScript({
           return;
         }
         if (tryMount()) {
-          console.log("[VideoNotes] Elements mounted via fallback interval.");
+          // console.log("[VideoNotes] Elements mounted via fallback interval.");
           stopPolling();
           clearInterval(interval);
         }
@@ -390,7 +390,7 @@ export default defineContentScript({
       setTimeout(() => {
         clearInterval(interval);
         if (isMounting) {
-          console.log(
+          console.warn(
             "[VideoNotes] Mount polling timed out. State:",
             mountedPieces
           );

@@ -27,7 +27,7 @@ export function LibraryView({ onSelectVideo }: LibraryViewProps) {
         event.type === "REFRESH_NOTES" ||
         event.type === "REFRESH_BOOKMARKS"
       ) {
-        console.log("[LibraryView] Received sync event, refreshing videos...");
+        // console.log("[LibraryView] Received sync event, refreshing videos...");
         queryClient.invalidateQueries({ queryKey: ["videos"] });
       }
     });

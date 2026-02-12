@@ -84,9 +84,9 @@ export const dbProxy = {
           .count();
 
         if (remainingNotes === 0 && remainingBookmarks === 0) {
-          console.log(
-            `[VideoNotes] No remaining content for ${videoId}. Purging metadata.`
-          );
+          // console.log(
+          //   `[VideoNotes] No remaining content for ${videoId}. Purging metadata.`
+          // );
           await db.videos.delete(videoId);
         }
       }
@@ -155,9 +155,9 @@ export const dbProxy = {
         .count();
 
       if (remainingNotes === 0) {
-        console.log(
-          `[VideoNotes] No remaining content for ${videoId}. Purging metadata.`
-        );
+        // console.log(
+        //   `[VideoNotes] No remaining content for ${videoId}. Purging metadata.`
+        // );
         await db.videos.delete(videoId);
       }
       return { success: true };

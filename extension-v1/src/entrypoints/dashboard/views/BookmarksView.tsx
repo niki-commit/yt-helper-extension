@@ -28,7 +28,7 @@ export function BookmarksView({ onSelectVideo }: BookmarksViewProps) {
   useEffect(() => {
     const unsubscribe = syncEngine.subscribe((event) => {
       if (event.type === "REFRESH_BOOKMARKS") {
-        console.log("[BookmarksView] Received sync event, refreshing...");
+        // console.log("[BookmarksView] Received sync event, refreshing...");
         queryClient.invalidateQueries({ queryKey: ["all-bookmarks"] });
       }
     });

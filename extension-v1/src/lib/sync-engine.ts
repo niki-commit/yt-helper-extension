@@ -9,7 +9,7 @@ class SyncEngine {
     // Listen for messages from background relay or other contexts
     browser.runtime.onMessage.addListener((message: any) => {
       if (message.type === "SYNC_EVENT") {
-        console.log("[SyncEngine] Received sync event:", message.payload);
+        // console.log("[SyncEngine] Received sync event:", message.payload);
         this.notifyListeners(message.payload);
       }
     });
@@ -19,7 +19,7 @@ class SyncEngine {
    * Broadcast an event to all other contexts via background relay
    */
   broadcast(event: SyncEvent) {
-    console.log("[SyncEngine] Broadcasting via runtime:", event);
+    // console.log("[SyncEngine] Broadcasting via runtime:", event);
     browser.runtime
       .sendMessage({
         type: "SYNC_EVENT",

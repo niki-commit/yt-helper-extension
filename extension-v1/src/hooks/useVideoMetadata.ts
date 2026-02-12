@@ -42,7 +42,7 @@ export function useVideoMetadata(videoId: string | null) {
         last_opened_at: Date.now(),
       };
 
-      console.log("[VideoNotes] Scraped metadata:", { title, channel });
+      // console.log("[VideoNotes] Scraped metadata:", { title, channel });
       await dbProxy.videos.save(videoData);
       queryClient.invalidateQueries({ queryKey: ["video-metadata", videoId] });
       queryClient.invalidateQueries({ queryKey: ["all-notes"] });
@@ -77,33 +77,8 @@ export function useVideoMetadata(videoId: string | null) {
     },
   });
 
-  // Auto-capture metadata from DOM if missing or stale (Content Script ONLY)
-  useEffect(() => {
-    if (!videoId) return;
-
-    if (
-      !window.location.hostname.includes("youtube.com") ||
-      !window.location.pathname.includes("/watch")
-    ) {
-      return;
-    }
-
-    // Initial attempt
-    scrapeMetadata();
-
-    // Polling fallback: Try a few times because YouTube is slow
-    let attempts = 0;
-    const interval = setInterval(() => {
-      attempts++;
-      scrapeMetadata().then((data) => {
-        if (data || attempts >= 5) {
-          clearInterval(interval);
-        }
-      });
-    }, 2000);
-
-    return () => clearInterval(interval);
-  }, [videoId]);
+  // Auto-capture (Auto-History) is intentionally DISABLED to prevent "zombie" metadata resurrection.
+  // We only save metadata when a note/bookmark is explicitly created.
 
   return {
     videoMetadata,

@@ -21,7 +21,7 @@ export const messages = {
 };
 
 export default defineBackground(() => {
-  console.log("[VideoNotes] Background Service Worker Initialized");
+  // console.log("[VideoNotes] Background Service Worker Initialized");
 
   // Message Handler
   browser.runtime.onMessage.addListener(
@@ -127,7 +127,7 @@ export default defineBackground(() => {
               return await db.videos.toArray();
 
             case messages.SYNC_EVENT:
-              console.log("[VideoNotes] Relaying sync event:", message.payload);
+              // console.log("[VideoNotes] Relaying sync event:", message.payload);
               // 1. Relay to all tabs (for Content Scripts)
               browser.tabs.query({}).then((tabs) => {
                 tabs.forEach((tab) => {

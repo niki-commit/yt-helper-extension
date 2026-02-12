@@ -23,6 +23,7 @@ import { useHideComments } from "@/hooks/useHideComments";
 import { useAutoPause } from "@/hooks/useAutoPause";
 import { useAutoResume } from "@/hooks/useAutoResume";
 import { getThumbnailUrl } from "@/lib/thumbnail-utils";
+import { Toaster } from "@/components/ui/sonner";
 
 import { useAllNotes } from "@/hooks/useAllNotes";
 import { useAllBookmarks } from "@/hooks/useAllBookmarks";
@@ -505,6 +506,7 @@ function App() {
           </div>
         </TabsContent>
       </Tabs>
+      <Toaster position="bottom-right" richColors expand={true} />
     </div>
   );
 }

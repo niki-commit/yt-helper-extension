@@ -5,6 +5,7 @@ import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { Separator } from "@/components/ui/separator";
 import { useVideoMetadata } from "@/hooks/useVideoMetadata";
 import { getThumbnailUrl } from "@/lib/thumbnail-utils";
+import { NoteExportButton } from "@/components/NoteExportButton";
 
 interface ReviewModeProps {
   videoId: string;
@@ -31,15 +32,23 @@ export function ReviewMode({ videoId, onBack }: ReviewModeProps) {
           </h1>
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 gap-2"
-          onClick={() => window.open(watchUrl, "_blank")}
-        >
-          <ExternalLink className="h-4 w-4" />
-          Watch on YouTube
-        </Button>
+        <div className="flex items-center gap-2">
+          <NoteExportButton
+            videoId={videoId}
+            videoTitle={videoMetadata?.title || "Video"}
+            variant="outline"
+            size="sm"
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-primary border-primary/20 bg-primary/5 hover:bg-primary/10 hover:border-primary/30 gap-2"
+            onClick={() => window.open(watchUrl, "_blank")}
+          >
+            <ExternalLink className="h-4 w-4" />
+            Watch on YouTube
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-1 gap-8 overflow-hidden">
