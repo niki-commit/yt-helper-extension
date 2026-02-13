@@ -52,7 +52,7 @@ export function RichTextEditor({
     editorProps: {
       attributes: {
         class:
-          "prose prose-sm max-w-none focus:outline-none min-h-[200px] p-4 text-foreground whitespace-pre-wrap",
+          "prose prose-sm vn-editor-content max-w-none focus:outline-none min-h-[200px] p-4 text-foreground whitespace-pre-wrap",
       },
     },
   });

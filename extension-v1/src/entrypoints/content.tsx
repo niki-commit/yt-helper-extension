@@ -60,6 +60,8 @@ export default defineContentScript({
             @media (max-width: 999px) {
               :host { display: none !important; }
             }
+            .vn-editor-content { font-size: 16px !important; line-height: 1.6 !important; }
+            .vn-editor-content p { font-size: 16px !important; }
           `;
           container.appendChild(styleSheet);
 
@@ -93,6 +95,8 @@ export default defineContentScript({
             @media (min-width: 1000px) {
               :host { display: none !important; }
             }
+            .vn-editor-content { font-size: 16px !important; line-height: 1.6 !important; }
+            .vn-editor-content p { font-size: 16px !important; }
           `;
           container.appendChild(styleSheet);
 

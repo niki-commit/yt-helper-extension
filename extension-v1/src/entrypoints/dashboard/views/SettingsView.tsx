@@ -35,6 +35,12 @@ export function SettingsView() {
       const json = exportAllDataAsJson(notes, bookmarks, videos);
       const filename = `videonotes-backup-${new Date().toISOString().split("T")[0]}.json`;
 
+      if (notes.length === 0 && bookmarks.length === 0) {
+        toast.dismiss();
+        toast.error("No notes or bookmarks to export");
+        return;
+      }
+
       downloadFile(json, filename, "application/json");
 
       toast.dismiss();
