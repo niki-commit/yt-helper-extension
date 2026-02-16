@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { Note, Folder, VideoMetadata, Bookmark } from "@/types/schema";
+import { EXTERNAL_LINKS } from "@/lib/constants";
 
 export const messages = {
   // NOTES
@@ -22,6 +23,15 @@ export const messages = {
 
 export default defineBackground(() => {
   // console.log("[VideoNotes] Background Service Worker Initialized");
+
+  // --- Lifecycle Events ---
+  browser.runtime.onInstalled.addListener((details) => {
+    if (details.reason === browser.runtime.OnInstalledReason.INSTALL) {
+      browser.tabs.create({ url: EXTERNAL_LINKS.TUTORIAL });
+    }
+  });
+
+  browser.runtime.setUninstallURL(EXTERNAL_LINKS.FEEDBACK);
 
   // Message Handler
   browser.runtime.onMessage.addListener(
@@ -147,7 +157,7 @@ export default defineBackground(() => {
               return { error: "Unknown message type" };
           }
         } catch (err: any) {
-          console.error("[VideoNotes] Background DB Error:", err);
+          // console.error("[VideoNotes] Background DB Error:", err);
           return { error: err.message };
         }
       };

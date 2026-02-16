@@ -119,12 +119,12 @@ export function initAutoPause() {
 
     if (document.visibilityState === "hidden" && autoPauseEnabled) {
       if (!video.paused) {
-        console.log("[VideoNotes] Tab backgrounded. Auto-pausing.");
+        // console.log("[VideoNotes] Tab backgrounded. Auto-pausing.");
         video.pause();
       }
     } else if (document.visibilityState === "visible" && autoResumeEnabled) {
       if (video.paused) {
-        console.log("[VideoNotes] Tab focused. Auto-resuming.");
+        // console.log("[VideoNotes] Tab focused. Auto-resuming.");
         video.play();
       }
     }

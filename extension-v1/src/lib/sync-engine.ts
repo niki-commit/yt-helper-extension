@@ -27,7 +27,7 @@ class SyncEngine {
       })
       .catch((err) => {
         // Ignore errors if no one is listening (e.g. extension reloaded)
-        console.warn("[SyncEngine] Broadcast failed:", err);
+        // console.warn("[SyncEngine] Broadcast failed:", err);
       });
   }
 

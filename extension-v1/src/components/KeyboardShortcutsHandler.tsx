@@ -28,7 +28,7 @@ export function KeyboardShortcutsHandler() {
       // Alt + N: New Note
       if (key === "n") {
         if (isAdActive) {
-          console.warn("[VideoNotes] Shortcut blocked: Ad is active.");
+          // console.warn("[VideoNotes] Shortcut blocked: Ad is active.");
           return;
         }
 
@@ -49,7 +49,7 @@ export function KeyboardShortcutsHandler() {
       // Alt + S: Toggle Sidebar/Floating
       if (key === "s") {
         if (isAdActive) {
-          console.warn("[VideoNotes] Shortcut blocked: Ad is active.");
+          // console.warn("[VideoNotes] Shortcut blocked: Ad is active.");
           return;
         }
 
@@ -67,7 +67,7 @@ export function KeyboardShortcutsHandler() {
       // Alt + B: Quick Bookmark
       if (key === "b") {
         if (isAdActive) {
-          console.warn("[VideoNotes] Shortcut blocked: Ad is active.");
+          // console.warn("[VideoNotes] Shortcut blocked: Ad is active.");
           return;
         }
 

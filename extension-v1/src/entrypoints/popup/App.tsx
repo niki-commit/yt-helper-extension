@@ -28,6 +28,8 @@ import { Toaster } from "@/components/ui/sonner";
 import { useAllNotes } from "@/hooks/useAllNotes";
 import { useAllBookmarks } from "@/hooks/useAllBookmarks";
 import { formatTime } from "@/lib/utils";
+import { useTotalStats } from "@/hooks/useTotalStats";
+import { SupportIconRow } from "@/components/SupportIconRow";
 
 function App() {
   const hideRecommendations = useHideRecommendations();
@@ -35,6 +37,7 @@ function App() {
   const autoPause = useAutoPause();
   const autoResume = useAutoResume();
   const { theme, setTheme } = useTheme();
+  const { totalNotes, totalBookmarks } = useTotalStats();
 
   const { data: noteGroups = [], isLoading: isLoadingNotes } = useAllNotes();
   const { data: bookmarks = [], isLoading: isLoadingBookmarks } =
@@ -56,31 +59,37 @@ function App() {
   return (
     <div className="bg-background text-foreground flex h-[450px] w-[350px] flex-col font-sans">
       <div className="border-border bg-card/50 flex items-center justify-between border-b p-4 backdrop-blur-sm">
-        <div>
+        <div className="flex flex-col">
           <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
             VideoNotes
           </h1>
-          <p className="text-muted-foreground text-xs">
-            Your Personal Learning Companion
-          </p>
+          <div className="text-muted-foreground flex items-center gap-1.5 text-[10px] font-medium">
+            <span className="text-primary">{totalNotes} Notes</span>
+            <span className="bg-border/50 h-3 w-px"></span>
+            <span className="text-primary">{totalBookmarks} Bookmarks</span>
+          </div>
         </div>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => {
-                browser.tabs.create({
-                  url: browser.runtime.getURL("dashboard.html" as any),
-                });
-              }}
-              className="hover:bg-accent hover:text-accent-foreground text-muted-foreground flex h-9 w-9 items-center justify-center rounded-md transition-colors"
-            >
-              <LayoutDashboard className="h-5 w-5" />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="bottom">
-            <p>Open Dashboard</p>
-          </TooltipContent>
-        </Tooltip>
+        <div className="flex items-center gap-2">
+          <SupportIconRow />
+          <div className="bg-border/50 mx-1 h-4 w-px"></div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => {
+                  browser.tabs.create({
+                    url: browser.runtime.getURL("dashboard.html" as any),
+                  });
+                }}
+                className="hover:bg-accent hover:text-accent-foreground text-muted-foreground flex h-9 w-9 items-center justify-center rounded-md transition-colors"
+              >
+                <LayoutDashboard className="h-5 w-5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              <p>Open Dashboard</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
       </div>
 
       <Tabs

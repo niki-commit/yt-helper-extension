@@ -20,13 +20,28 @@ import { BookmarksView } from "../views/BookmarksView";
 import { SettingsView } from "../views/SettingsView";
 import { ReviewMode } from "../views/ReviewMode";
 import { GlobalSearch } from "./GlobalSearch";
-import { Library, Bookmark, Settings, Sparkles, FileText } from "lucide-react";
+import {
+  Library,
+  Bookmark,
+  Settings,
+  Sparkles,
+  FileText,
+  Youtube,
+  LifeBuoy,
+  Coffee,
+  ExternalLink,
+  Instagram,
+  Twitter,
+} from "lucide-react";
+import { useTotalStats } from "@/hooks/useTotalStats";
+import { EXTERNAL_LINKS } from "@/lib/constants";
 
 type View = "library" | "bookmarks" | "settings" | "integrations" | "review";
 
 export function DashboardLayout() {
   const [activeView, setActiveView] = useState<View>("library");
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const { totalNotes, totalBookmarks } = useTotalStats();
 
   const handleSelectVideo = (videoId: string) => {
     setSelectedVideoId(videoId);
@@ -127,7 +142,7 @@ export function DashboardLayout() {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="overflow-x-hidden">
           <SidebarGroup>
             <SidebarGroupLabel>Navigation</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -140,7 +155,7 @@ export function DashboardLayout() {
                       tooltip={item.title}
                     >
                       <item.icon className="size-4" />
-                      <span>{item.title}</span>
+                      <span className="truncate">{item.title}</span>
                       {item.badge && (
                         <span className="bg-primary/10 text-primary ml-auto rounded-full px-2 py-0.5 text-xs">
                           {item.badge}
@@ -149,6 +164,81 @@ export function DashboardLayout() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <Separator className="opacity-50" />
+
+          <SidebarGroup>
+            <SidebarGroupLabel>Support & Resources</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Watch Tutorial">
+                    <a
+                      href={EXTERNAL_LINKS.TUTORIAL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Youtube className="size-4 text-red-500" />
+                      <span>Tutorial Video</span>
+                      <ExternalLink className="ml-auto size-3 opacity-50" />
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Report a Bug">
+                    <a
+                      href={EXTERNAL_LINKS.BUG_REPORT}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <LifeBuoy className="size-4 text-blue-500" />
+                      <span>Feedback/Report Bug</span>
+                      <ExternalLink className="ml-auto size-3 opacity-50" />
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Follow on X">
+                    <a
+                      href={EXTERNAL_LINKS.X}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Twitter className="size-4 text-sky-500" />
+                      <span>Follow on X</span>
+                      <ExternalLink className="ml-auto size-3 opacity-50" />
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Instagram">
+                    <a
+                      href={EXTERNAL_LINKS.INSTAGRAM}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Instagram className="size-4 text-pink-500" />
+                      <span>Follow on Instagram</span>
+                      <ExternalLink className="ml-auto size-3 opacity-50" />
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Buy me a coffee">
+                    <a
+                      href={EXTERNAL_LINKS.COFFEE}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Coffee className="size-4 text-orange-500" />
+                      <span className="truncate">Support Creator</span>
+                      <ExternalLink className="ml-auto size-3 opacity-50" />
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -164,8 +254,19 @@ export function DashboardLayout() {
           <div className="flex items-center gap-2">
             <SidebarTrigger className="-ml-1" />
             <Separator orientation="vertical" className="mr-2 h-4" />
-            <h1 className="text-lg font-semibold">
-              {navigation.find((n) => n.view === activeView)?.title}
+            <h1 className="flex items-center gap-3 text-lg font-semibold">
+              {navigation.find((n) => n.view === activeView)?.title ||
+                "Review Mode"}
+
+              <div className="border-border/50 bg-muted/30 text-muted-foreground flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium">
+                <span className="text-primary/80 font-bold">{totalNotes}</span>{" "}
+                Notes
+                <span className="bg-border/50 h-2 w-px"></span>
+                <span className="text-primary/80 font-bold">
+                  {totalBookmarks}
+                </span>{" "}
+                Bookmarks
+              </div>
             </h1>
           </div>
           <div className="mx-auto max-w-md flex-1">

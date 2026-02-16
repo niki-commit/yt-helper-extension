@@ -9,8 +9,6 @@ const queryClient = new QueryClient({
   },
 });
 
-import { KeyboardShortcutsHandler } from "./KeyboardShortcutsHandler";
-import { Toaster } from "./ui/sonner";
 import { ThemeProvider } from "@/hooks/useTheme";
 
 export function Providers({ children }: { children: ReactNode }) {

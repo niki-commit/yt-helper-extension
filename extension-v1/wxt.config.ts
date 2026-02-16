@@ -18,6 +18,7 @@ export default defineConfig({
       default_title: "VideoNotes Settings and Dashboard",
     },
     permissions: ["storage", "tabs"],
+    host_permissions: ["*://*.youtube.com/*"],
     // host_permissions: ["https://*.supabase.co/*", "http://localhost:3000/*"],
   },
   vite: () => ({

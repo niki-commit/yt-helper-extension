@@ -13,19 +13,19 @@ export function useBookmarks(videoId: string | null) {
   useEffect(() => {
     if (!videoId) return;
 
-    console.log(
-      "[VideoNotes] Subscribing to sync events for bookmark:",
-      videoId
-    );
+    // console.log(
+    //   "[VideoNotes] Subscribing to sync events for bookmark:",
+    //   videoId
+    // );
     const unsubscribe = syncEngine.subscribe((event) => {
       if (
         event.type === "REFRESH_BOOKMARKS" &&
         (event.videoId === videoId || event.videoId === "")
       ) {
-        console.log(
-          "[VideoNotes] Received sync event for bookmark",
-          videoId || "global"
-        );
+        // console.log(
+        //   "[VideoNotes] Received sync event for bookmark",
+        //   videoId || "global"
+        // );
         queryClient.invalidateQueries({ queryKey: ["bookmark", videoId] });
         queryClient.invalidateQueries({ queryKey: ["all-bookmarks"] });
       }

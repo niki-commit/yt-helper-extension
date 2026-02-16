@@ -14,13 +14,13 @@ export function useNotes(videoId: string | null) {
   useEffect(() => {
     if (!videoId) return;
 
-    console.log("[VideoNotes] Subscribing to sync events for video:", videoId);
+    // console.log("[VideoNotes] Subscribing to sync events for video:", videoId);
     const unsubscribe = syncEngine.subscribe((event) => {
       if (event.type === "REFRESH_NOTES" && event.videoId === videoId) {
-        console.log(
-          "[VideoNotes] Received remote sync event for notes",
-          videoId
-        );
+        // console.log(
+        //   "[VideoNotes] Received remote sync event for notes",
+        //   videoId
+        // );
         queryClient.invalidateQueries({ queryKey: ["notes", videoId] });
         queryClient.invalidateQueries({ queryKey: ["all-notes"] });
       }

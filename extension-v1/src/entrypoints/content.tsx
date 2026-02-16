@@ -394,10 +394,7 @@ export default defineContentScript({
       setTimeout(() => {
         clearInterval(interval);
         if (isMounting) {
-          console.warn(
-            "[VideoNotes] Mount polling timed out. State:",
-            mountedPieces
-          );
+          // console.warn("[VideoNotes] Mount polling timed out. State:", mountedPieces);
           stopPolling();
         }
       }, 20000);
@@ -436,7 +433,7 @@ export default defineContentScript({
         player?.classList.contains("ad-interrupting");
 
       if (isAdActive) {
-        console.warn("[VideoNotes] Blocked open request - Ad is active.");
+        // console.warn("[VideoNotes] Blocked open request - Ad is active.");
         return;
       }
 

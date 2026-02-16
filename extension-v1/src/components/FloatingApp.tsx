@@ -56,7 +56,7 @@ export function FloatingAppContent() {
   useEffect(() => {
     const handleFullscreenChange = () => {
       if (!document.fullscreenElement && isOpen) {
-        console.log("[VideoNotes] Exited fullscreen. Closing floating UI.");
+        // console.log("[VideoNotes] Exited fullscreen. Closing floating UI.");
         setIsOpen(false);
         setFocusNote(false);
       }

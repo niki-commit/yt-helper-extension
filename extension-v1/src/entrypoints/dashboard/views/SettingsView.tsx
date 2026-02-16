@@ -202,7 +202,8 @@ export function SettingsView() {
           <Separator />
           <div className="text-muted-foreground space-y-2 text-sm">
             <p>
-              <strong>VideoNotes</strong> - Your YouTube study companion
+              <strong>VideoNotes</strong> - Your personal YouTube study and
+              learning companion.
             </p>
             <p>Version 1.0.0</p>
             <p className="pt-2">

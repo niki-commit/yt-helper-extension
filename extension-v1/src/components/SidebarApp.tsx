@@ -9,6 +9,7 @@ import { NoteWorkspace } from "@/components/NoteWorkspace";
 import { useTheme } from "@/hooks/useTheme";
 import { Providers } from "@/components/Providers";
 import { useVideoMetadata } from "@/hooks/useVideoMetadata";
+import { SupportIconRow } from "@/components/SupportIconRow";
 
 export function SidebarAppContent() {
   const [value, setValue] = useState<string>("");
@@ -23,7 +24,7 @@ export function SidebarAppContent() {
 
   useEffect(() => {
     const handleOpen = (e: any) => {
-      console.log("[VideoNotes] Sidebar received open event", e.detail);
+      // console.log("[VideoNotes] Sidebar received open event", e.detail);
       if (e.detail?.currentTime !== undefined) {
         setInitialTimestamp(e.detail.currentTime);
       }
@@ -70,6 +71,12 @@ export function SidebarAppContent() {
               <h1 className="from-primary to-secondary-foreground bg-linear-to-r bg-clip-text text-xl font-bold text-transparent">
                 VideoNotes
               </h1>
+              <div
+                className="ml-auto flex items-center pr-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <SupportIconRow size={18} />
+              </div>
             </div>
           </AccordionTrigger>
           <AccordionContent className="bg-transparent px-4 pb-4">
